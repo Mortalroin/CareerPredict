@@ -12,12 +12,13 @@
 The frontend is prepared for these FastAPI-style endpoints:
 
 - `GET /api/v1/health`
-- `POST /api/v1/career/analyze`
+- `POST /api/v1/match/resume-to-jobs`
 
-Suggested multipart form fields for the analyze endpoint:
+Suggested multipart form fields for the match endpoint:
 
 - `file`
 - `target_role`
+- `limit`
 - `notes`
 
 If the backend is not available, the UI falls back to mock data by default.

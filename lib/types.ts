@@ -3,6 +3,52 @@ export interface AnalysisRequestPayload {
   notes: string
 }
 
+export interface BackendMatchBreakdown {
+  degree_pass: boolean
+  experience_pass: boolean
+  city_pass: boolean
+  language_pass: boolean
+  hard_filter_bonus: number
+  skill_overlap: string[]
+  missing_required_skills: string[]
+}
+
+export interface BackendJobMatchItem {
+  job_id: string
+  title: string
+  company_name: string
+  city: string
+  similarity_score: number
+  total_score: number
+  breakdown: BackendMatchBreakdown
+}
+
+export interface BackendResumeMatchResponse {
+  structured_resume: {
+    basics: {
+      name: string
+      current_city: string
+    }
+    profile: {
+      summary: string
+    }
+    derived: {
+      highest_degree_label: string
+      total_years_experience: number
+      core_skills: string[]
+      role_tags: string[]
+    }
+  }
+  hard_conditions: {
+    target_roles: string[]
+    target_cities: string[]
+  }
+  soft_conditions: {
+    tool_skills: string[]
+  }
+  matches: BackendJobMatchItem[]
+}
+
 export interface ProfileCardItem {
   label: string
   value: string

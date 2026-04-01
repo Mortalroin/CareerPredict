@@ -25,8 +25,8 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <InsightCard title="Matched documents" icon={BookMarked}>
-            {data.documents.map((doc) => (
-              <div key={doc.title} className="rounded-2xl border border-border/60 bg-background/80 p-4">
+            {data.documents.map((doc, index) => (
+              <div key={`${doc.title}-${doc.category}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="font-medium">{doc.title}</p>
@@ -41,8 +41,8 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
           </InsightCard>
 
           <InsightCard title="Hiring trends" icon={TrendingUp}>
-            {data.trends.map((trend) => (
-              <div key={trend.title} className="rounded-2xl border border-border/60 bg-background/80 p-4">
+            {data.trends.map((trend, index) => (
+              <div key={`${trend.title}-${trend.value}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-4">
                 <p className="font-medium">{trend.title}</p>
                 <p className="mt-2 text-2xl font-semibold text-primary">{trend.value}</p>
               </div>
@@ -50,8 +50,8 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
           </InsightCard>
 
           <InsightCard title="Hot skill demand" icon={BrainCircuit}>
-            {data.skills.map((skill) => (
-              <div key={skill.name}>
+            {data.skills.map((skill, index) => (
+              <div key={`${skill.name}-${skill.demand}-${index}`}>
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span>{skill.name}</span>
                   <span className="text-muted-foreground">{skill.demand}%</span>
@@ -67,8 +67,8 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
           </InsightCard>
 
           <InsightCard title="Recommended learning" icon={GraduationCap}>
-            {data.certifications.map((item) => (
-              <div key={item} className="rounded-2xl border border-border/60 bg-background/80 p-4">
+            {data.certifications.map((item, index) => (
+              <div key={`${item}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-4">
                 <p className="font-medium">{item}</p>
               </div>
             ))}

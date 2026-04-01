@@ -1,0 +1,44 @@
+[
+  {
+    "title": "客服专员",
+    "company_name": "江南制造",
+    "city": "长沙",
+    "industry": ["manufacturing", "foreign_trade"],
+    "job_type": "full_time",
+    "degree_name_raw": "本科及以上",
+    "min_degree_label": "bachelor",
+    "min_degree_level": 4,
+    "min_years_experience": 3,
+    "required_languages": ["english"],
+    "required_skills": ["客户服务", "订单跟单", "出货安排", "报关"],
+    "preferred_skills": ["外贸", "投诉处理"],
+    "required_tools": ["word", "excel"],
+    "responsibilities": [
+      "回复客户需求并确认订单细节",
+      "协调排产、订舱、报关和出货",
+      "处理回款与质量投诉"
+    ],
+    "description": "负责外贸客户支持、订单跟进和出货协调。"
+  },
+  {
+    "title": "AI Product Lead",
+    "company_name": "Career Predict",
+    "city": "Shanghai",
+    "industry": ["ai", "internet"],
+    "job_type": "full_time",
+    "degree_name_raw": "本科及以上",
+    "min_degree_label": "bachelor",
+    "min_degree_level": 4,
+    "min_years_experience": 3,
+    "required_languages": ["english"],
+    "required_skills": ["product planning", "data analysis", "rag"],
+    "preferred_skills": ["langchain", "chromadb", "sql"],
+    "required_tools": ["figma"],
+    "responsibilities": [
+      "design AI product roadmap",
+      "align business and engineering",
+      "ship retrieval and matching workflows"
+    ],
+    "description": "Own AI product direction and retrieval-enhanced matching experience."
+  }
+]

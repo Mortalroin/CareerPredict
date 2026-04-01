@@ -23,7 +23,7 @@ export function CareerDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [backendReady, setBackendReady] = useState<boolean | null>(null)
   const [statusMessage, setStatusMessage] = useState(
-    "The page is currently showing demo report data. Upload a resume to generate a personalized result.",
+    "The page is currently showing demo report data. Upload a resume to run FastAPI parsing and job matching.",
   )
 
   useEffect(() => {
@@ -55,12 +55,12 @@ export function CareerDashboard() {
     }
 
     setIsSubmitting(true)
-    setStatusMessage("Analyzing the resume and preparing the career report...")
+    setStatusMessage("Parsing the resume, matching jobs, and refreshing the dashboard...")
 
     try {
       const result = await analyzeResume(file, { targetRole, notes })
       setAnalysis(result)
-      setStatusMessage("Career report generated successfully. All downstream panels have been refreshed.")
+      setStatusMessage("Resume parsed and matched successfully. The dashboard has been refreshed with live backend data.")
     } catch (error) {
       const message = error instanceof Error ? error.message : "Analysis failed. Please try again."
       setStatusMessage(message)
@@ -101,8 +101,8 @@ export function CareerDashboard() {
       </main>
       <footer className="border-t border-border/60 bg-card/70">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <p>The frontend is ready and supports both FastAPI integration and local mock fallback.</p>
-          <p>Recommended backend endpoints: POST /api/v1/career/analyze and GET /api/v1/health.</p>
+          <p>The frontend now supports live FastAPI resume matching and local mock fallback.</p>
+          <p>Recommended backend endpoints: POST /api/v1/match/resume-to-jobs and GET /api/v1/health.</p>
         </div>
       </footer>
     </div>
