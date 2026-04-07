@@ -1,4 +1,3 @@
-import { mockCareerAnalysis } from "@/lib/mock-data"
 import type {
   AnalysisRequestPayload,
   BackendActionPlanPhase,
@@ -14,18 +13,6 @@ import type {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000"
-
-const ENABLE_FALLBACK = process.env.NEXT_PUBLIC_ENABLE_API_FALLBACK !== "false"
-
-function buildMockResponse(payload: AnalysisRequestPayload): CareerAnalysisResponse {
-  return {
-    ...mockCareerAnalysis,
-    profile: {
-      ...mockCareerAnalysis.profile,
-      suggestedDirection: payload.targetRole || mockCareerAnalysis.profile.suggestedDirection,
-    },
-  }
-}
 
 function cleanText(value: string | undefined | null): string {
   if (!value) {
@@ -688,32 +675,40 @@ async function parseJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export async function analyzeResume(
+function buildResumeFormData(
   file: File,
   payload: AnalysisRequestPayload,
-): Promise<CareerAnalysisResponse> {
+  options?: { includeLimit?: boolean },
+): FormData {
   const formData = new FormData()
   formData.append("file", file)
   formData.append("target_role", payload.targetRole)
   formData.append("notes", payload.notes)
-  formData.append("limit", "8")
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/match/resume-to-jobs`, {
-      method: "POST",
-      body: formData,
-    })
-
-    const data = await parseJson<BackendResumeMatchResponse>(response)
-    return mapBackendResponse(data, payload)
-  } catch (error) {
-    if (!ENABLE_FALLBACK) {
-      throw error
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    return buildMockResponse(payload)
+  if (options?.includeLimit) {
+    formData.append("limit", "8")
   }
+
+  return formData
+}
+
+export async function analyzeResume(
+  file: File,
+  payload: AnalysisRequestPayload,
+): Promise<CareerAnalysisResponse> {
+  const parseResponse = await fetch(`${API_BASE_URL}/api/v1/resume/parse`, {
+    method: "POST",
+    body: buildResumeFormData(file, payload),
+  })
+  await parseJson<unknown>(parseResponse)
+
+  const matchResponse = await fetch(`${API_BASE_URL}/api/v1/match/resume-to-jobs`, {
+    method: "POST",
+    body: buildResumeFormData(file, payload, { includeLimit: true }),
+  })
+
+  const data = await parseJson<BackendResumeMatchResponse>(matchResponse)
+  return mapBackendResponse(data, payload)
 }
 
 export async function checkBackendHealth(): Promise<boolean> {

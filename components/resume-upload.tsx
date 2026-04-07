@@ -122,6 +122,7 @@ export function ResumeUpload({
                     className="mt-4 rounded-full"
                     onClick={(event) => {
                       event.preventDefault()
+                      event.stopPropagation()
                       handleOpenFilePicker()
                     }}
                   >
