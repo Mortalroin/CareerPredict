@@ -16,15 +16,15 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
     <section className="py-14 lg:py-20" id="knowledge">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 max-w-3xl">
-          <p className="text-sm font-medium text-primary">Knowledge insights</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">Turn market research into concrete next actions</h2>
+          <p className="text-sm font-medium text-primary">岗位洞察</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">把市场信息转成下一步可执行动作</h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            Once the backend returns knowledge-base matches, this section is already ready to display documents, trends, hot skills, and recommended learning items.
+            当后端返回岗位样本、能力趋势、热门技能与推荐学习项后，这里会统一展示，帮助你把“看到了什么”转成“接下来该做什么”。
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <InsightCard title="Matched documents" icon={BookMarked}>
+          <InsightCard title="关联岗位样本" icon={BookMarked}>
             {data.documents.map((doc, index) => (
               <div key={`${doc.title}-${doc.category}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-4">
                 <div className="flex items-center justify-between gap-4">
@@ -33,14 +33,14 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
                     <p className="mt-1 text-sm text-muted-foreground">{doc.category}</p>
                   </div>
                   <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-sm text-emerald-600">
-                    {doc.relevance}%
+                    相关度 {doc.relevance}%
                   </span>
                 </div>
               </div>
             ))}
           </InsightCard>
 
-          <InsightCard title="Hiring trends" icon={TrendingUp}>
+          <InsightCard title="关键趋势" icon={TrendingUp}>
             {data.trends.map((trend, index) => (
               <div key={`${trend.title}-${trend.value}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-4">
                 <p className="font-medium">{trend.title}</p>
@@ -49,7 +49,7 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
             ))}
           </InsightCard>
 
-          <InsightCard title="Hot skill demand" icon={BrainCircuit}>
+          <InsightCard title="热门技能需求" icon={BrainCircuit}>
             {data.skills.map((skill, index) => (
               <div key={`${skill.name}-${skill.demand}-${index}`}>
                 <div className="mb-2 flex items-center justify-between text-sm">
@@ -66,7 +66,7 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
             ))}
           </InsightCard>
 
-          <InsightCard title="Recommended learning" icon={GraduationCap}>
+          <InsightCard title="推荐学习项" icon={GraduationCap}>
             {data.certifications.map((item, index) => (
               <div key={`${item}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-4">
                 <p className="font-medium">{item}</p>

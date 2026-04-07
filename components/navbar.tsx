@@ -7,10 +7,10 @@ interface NavbarProps {
 }
 
 const navItems = [
-  { label: "Profile", href: "#profile", icon: Sparkles },
-  { label: "Jobs", href: "#jobs", icon: FileText },
-  { label: "Roadmap", href: "#roadmap", icon: Map },
-  { label: "Growth", href: "#growth", icon: LineChart },
+  { label: "画像", href: "#profile", icon: Sparkles },
+  { label: "工作机会", href: "#jobs", icon: FileText },
+  { label: "路线图", href: "#roadmap", icon: Map },
+  { label: "成长", href: "#growth", icon: LineChart },
 ]
 
 export function Navbar({ reportBadge }: NavbarProps) {
@@ -22,8 +22,8 @@ export function Navbar({ reportBadge }: NavbarProps) {
             <Compass className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-base font-semibold">Career Predict</p>
-            <p className="text-xs text-muted-foreground">AI career workspace</p>
+            <p className="text-base font-semibold">职业预测</p>
+            <p className="text-xs text-muted-foreground">人工智能职业工作空间</p>
           </div>
         </a>
 
@@ -44,7 +44,7 @@ export function Navbar({ reportBadge }: NavbarProps) {
         </nav>
 
         <div className="rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary">
-          {reportBadge ?? "Ready"}
+          {reportBadge ?? "就绪"}
         </div>
       </div>
     </header>

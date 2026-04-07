@@ -19,6 +19,19 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
+## Optional DeepSeek LLM setup
+
+If you want the backend to use DeepSeek for the report overview and later reranking / parsing enhancement, create `backend/.env` and set:
+
+```bash
+DEEPSEEK_API_KEY=your_key
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_TIMEOUT_SECONDS=30
+```
+
+If these values are empty, the backend stays fully runnable and falls back to deterministic rule-based report text.
+
 ## Endpoints
 
 - `GET /api/v1/health`
@@ -119,3 +132,15 @@ The matching pipeline uses:
 - deterministic local vectors for runnable end-to-end scoring
 - hard filters for degree, years, city, and language
 - soft matching for skills and embedding similarity
+- optional LLM enrichment for the overview section of the career report
+
+## Match response now includes
+
+- structured resume
+- hard and soft matching conditions
+- ranked job matches
+- four-dimension capability scores
+- job portraits
+- vertical growth paths
+- role transition paths
+- action plan and report metadata

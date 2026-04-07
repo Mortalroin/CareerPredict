@@ -13,32 +13,32 @@ export function HeroSection() {
         <div className="flex flex-col justify-center">
           <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-card/80 px-4 py-2 text-sm text-primary">
             <Sparkles className="h-4 w-4" />
-            Resume parsing, job matching, and planning in one flow
+            简历解析、岗位匹配与成长规划一体化
           </div>
           <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-            Turn a plain resume into an
+            把一份普通简历转成可执行的
             <span className="block bg-gradient-to-r from-primary via-chart-3 to-accent bg-clip-text text-transparent">
-              AI-guided career roadmap
+              AI 职业发展路线图
             </span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-            The frontend is now fully wired for upload, analysis, and report presentation. Once the FastAPI backend is ready, it can plug into the existing flow without redesign.
+            当前页面已经打通上传、分析与报告呈现主流程。随着 FastAPI 与大模型能力接入完成，你可以直接在现有工作流上继续增强，而无需推翻重做。
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Button asChild size="lg" className="rounded-full px-6">
               <a href="#upload">
-                Upload resume
+                上传简历
                 <ArrowDownRight className="h-4 w-4" />
               </a>
             </Button>
             <Button asChild variant="outline" size="lg" className="rounded-full px-6">
-              <a href="#jobs">View job matches</a>
+              <a href="#jobs">查看岗位匹配</a>
             </Button>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            <StatCard label="Report modules" value="6 panels" icon={Cpu} />
-            <StatCard label="Top match score" value="95%" icon={Target} />
-            <StatCard label="Backend style" value="FastAPI" icon={Sparkles} />
+            <StatCard label="报告模块" value="多模块联动" icon={Cpu} />
+            <StatCard label="能力对比" value="四维分析" icon={Target} />
+            <StatCard label="后端能力" value="FastAPI + LLM" icon={Sparkles} />
           </div>
         </div>
 
@@ -46,21 +46,21 @@ export function HeroSection() {
           <CardContent className="space-y-6 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Preview report</p>
-                <h2 className="text-2xl font-semibold">AI Career Transition Report</h2>
+                <p className="text-sm text-muted-foreground">报告预览</p>
+                <h2 className="text-2xl font-semibold">AI 职业发展报告</h2>
               </div>
-              <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-sm text-emerald-600">Ready</div>
+              <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-sm text-emerald-600">可演示</div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <PreviewBlock title="Current profile" value="Senior Product Manager / 6 years" />
-              <PreviewBlock title="Next target" value="AI Product Lead" />
-              <PreviewBlock title="Near-term focus" value="AI workflow depth and case-study storytelling" />
-              <PreviewBlock title="Suggested timeline" value="4 to 6 month transition sprint" />
+              <PreviewBlock title="当前画像" value="候选人能力结构与发展潜力" />
+              <PreviewBlock title="目标方向" value="目标岗位匹配与职业路径规划" />
+              <PreviewBlock title="近期重点" value="关键技能差距、项目补强与实践建议" />
+              <PreviewBlock title="建议周期" value="短期冲刺 + 中期成长规划" />
             </div>
             <div className="rounded-3xl bg-secondary/60 p-5">
-              <p className="text-sm text-muted-foreground">Integration note</p>
+              <p className="text-sm text-muted-foreground">联调说明</p>
               <p className="mt-2 text-sm leading-7 text-foreground">
-                The page tries FastAPI first and automatically falls back to local mock data if the backend is not available.
+                页面会优先请求 FastAPI；若后端暂时不可用，则自动回退到本地演示数据，确保前端展示流程始终可用。
               </p>
             </div>
           </CardContent>

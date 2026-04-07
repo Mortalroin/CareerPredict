@@ -23,14 +23,83 @@ export interface BackendJobMatchItem {
   breakdown: BackendMatchBreakdown
 }
 
+export interface BackendCapabilityScore {
+  dimension: string
+  score: number
+  weight: number
+  summary: string
+  matched_items: string[]
+  gap_items: string[]
+}
+
+export interface BackendJobPortrait {
+  role_name: string
+  role_family: string
+  summary: string
+  professional_skills: string[]
+  certificates: string[]
+  innovation_points: string[]
+  learning_requirements: string[]
+  stress_requirements: string[]
+  communication_requirements: string[]
+  internship_requirements: string[]
+  representative_companies: string[]
+}
+
+export interface BackendPathNode {
+  title: string
+  stage: string
+  description: string
+  skills: string[]
+}
+
+export interface BackendVerticalPath {
+  role_family: string
+  description: string
+  nodes: BackendPathNode[]
+}
+
+export interface BackendTransitionPath {
+  source_role: string
+  target_role: string
+  reason: string
+  bridge_skills: string[]
+  action_items: string[]
+}
+
+export interface BackendActionPlanPhase {
+  phase: string
+  timeline: string
+  goals: string[]
+  actions: string[]
+  metrics: string[]
+}
+
 export interface BackendResumeMatchResponse {
   structured_resume: {
     basics: {
       name: string
       current_city: string
     }
+    job_intention: {
+      target_roles: string[]
+      target_city: string[]
+    }
+    projects: {
+      name: string
+      description: string
+      keywords: string[]
+    }[]
+    skills: {
+      certificates: string[]
+    }
+    work_experience: {
+      responsibilities: string[]
+      keywords: string[]
+    }[]
     profile: {
       summary: string
+      strengths: string[]
     }
     derived: {
       highest_degree_label: string
@@ -47,6 +116,24 @@ export interface BackendResumeMatchResponse {
     tool_skills: string[]
   }
   matches: BackendJobMatchItem[]
+  capability_scores: BackendCapabilityScore[]
+  job_portraits: BackendJobPortrait[]
+  vertical_paths: BackendVerticalPath[]
+  transition_paths: BackendTransitionPath[]
+  career_report: {
+    target_role: string
+    target_city: string
+    completeness_score: number
+    competitiveness_score: number
+    readiness_score: number
+    llm_enabled: boolean
+    overview: string
+    exploration: string
+    path_plan: string
+    edit_tips: string[]
+    action_plan: BackendActionPlanPhase[]
+    export_ready: boolean
+  }
 }
 
 export interface ProfileCardItem {
@@ -61,6 +148,7 @@ export interface CareerProfileData {
   cards: ProfileCardItem[]
   skills: string[]
   strengths: string[]
+  certificates: string[]
   suggestedDirection: string
 }
 
@@ -73,6 +161,35 @@ export interface JobRecommendation {
   location: string
   tags: string[]
   reason: string
+}
+
+export interface CapabilityScoreCard {
+  dimension: string
+  score: number
+  weight: number
+  summary: string
+  matchedItems: string[]
+  gapItems: string[]
+}
+
+export interface ProjectHighlight {
+  title: string
+  description: string
+  tags: string[]
+}
+
+export interface JobPortraitCard {
+  roleName: string
+  roleFamily: string
+  summary: string
+  professionalSkills: string[]
+  certificates: string[]
+  innovationPoints: string[]
+  learningRequirements: string[]
+  stressRequirements: string[]
+  communicationRequirements: string[]
+  internshipRequirements: string[]
+  representativeCompanies: string[]
 }
 
 export interface RoadmapStep {
@@ -122,13 +239,49 @@ export interface ReportSummary {
   reportTitle: string
   updatedAt: string
   highlights: string[]
+  overview: string
+  pathPlan: string
+  editTips: string[]
+  llmEnabled: boolean
+  exportReady: boolean
+  actionPlan: {
+    phase: string
+    timeline: string
+    goals: string[]
+    actions: string[]
+    metrics: string[]
+  }[]
 }
 
 export interface CareerAnalysisResponse {
   profile: CareerProfileData
+  projects: ProjectHighlight[]
+  capabilityScores: CapabilityScoreCard[]
   jobs: JobRecommendation[]
+  jobPortraits: JobPortraitCard[]
   roadmap: RoadmapStep[]
   growth: GrowthStage[]
+  transitionPaths: {
+    sourceRole: string
+    targetRole: string
+    reason: string
+    bridgeSkills: string[]
+    actionItems: string[]
+  }[]
   knowledge: KnowledgeInsightsData
   report: ReportSummary
+}
+
+export interface JobDetailSnapshot {
+  job: JobRecommendation
+  portrait?: JobPortraitCard
+  reportTitle: string
+  candidateName: string
+}
+
+export interface GrowthDetailSnapshot {
+  selectedStage: GrowthStage
+  nextStage?: GrowthStage
+  reportTitle: string
+  candidateName: string
 }

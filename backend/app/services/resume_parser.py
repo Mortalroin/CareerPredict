@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from collections import OrderedDict
 from uuid import uuid4
@@ -25,6 +26,7 @@ from app.schemas.resume import (
     StructuredResume,
 )
 from app.services.file_extractors import FileExtractorService
+from app.services.llm_service import LLMService
 
 
 DEGREE_LEVELS = {
@@ -40,6 +42,7 @@ DEGREE_LEVELS = {
 class ResumeParserService:
     def __init__(self) -> None:
         self.file_extractor = FileExtractorService()
+        self.llm_service = LLMService()
 
     async def parse_resume(
         self,
@@ -57,6 +60,7 @@ class ResumeParserService:
             city=city,
             notes=notes,
         )
+        profile = self._enrich_profile_with_llm(extracted_text, profile)
         embedding_text = self._build_embedding_text(profile)
         hard_conditions = self._build_hard_conditions(profile)
         soft_conditions = self._build_soft_conditions(profile, embedding_text)
@@ -145,6 +149,8 @@ class ResumeParserService:
             skills=skills,
             project_experience=project_experience,
             work_experience=work_experience,
+            certificates=[],
+            strengths=[],
             summary=summary,
             notes=notes,
         )
@@ -159,6 +165,84 @@ class ResumeParserService:
             target_cities=target_cities,
             languages=profile.languages,
             current_city=profile.current_city,
+        )
+
+    def _enrich_profile_with_llm(self, text: str, profile: ResumeProfile) -> ResumeProfile:
+        if not self.llm_service.enabled:
+            return profile
+
+        payload = {
+            "candidate_name": profile.candidate_name,
+            "education_level": profile.education_level,
+            "graduation_school": profile.graduation_school,
+            "target_role": profile.target_role,
+            "target_roles": profile.target_roles,
+            "target_city": profile.target_city,
+            "current_city": profile.current_city,
+            "years_experience": profile.years_experience,
+            "languages": profile.languages,
+            "skills": profile.skills,
+            "work_experience": profile.work_experience[:8],
+            "project_experience": [
+                {
+                    "name": item.name,
+                    "description": item.description,
+                    "keywords": item.keywords,
+                }
+                for item in profile.project_experience[:5]
+            ],
+            "notes": profile.notes,
+        }
+        user_prompt = "\n".join(
+            [
+                "Return JSON only.",
+                "Allowed keys: target_roles, target_city, current_city, years_experience, skills, certificates, strengths, summary.",
+                "Keep every value faithful to the resume and concise.",
+                "Current parsed profile:",
+                json.dumps(payload, ensure_ascii=False),
+                "Raw resume text:",
+                text[:6000],
+            ]
+        )
+        result = self.llm_service.generate_text(
+            system_prompt=(
+                "You are an expert Chinese resume parser for career planning. "
+                "Improve structured parsing without inventing facts."
+            ),
+            user_prompt=user_prompt,
+            temperature=0.1,
+            max_output_tokens=900,
+        )
+        if not result:
+            return profile
+
+        enriched = self._parse_llm_json(result.content)
+        if not enriched:
+            return profile
+
+        target_roles = list(
+            OrderedDict.fromkeys(
+                profile.target_roles + self._ensure_string_list(enriched.get("target_roles"))
+            )
+        )
+        merged_skills = list(
+            OrderedDict.fromkeys(
+                profile.skills + self._ensure_string_list(enriched.get("skills"))
+            )
+        )[:30]
+
+        return profile.model_copy(
+            update={
+                "target_roles": target_roles,
+                "target_role": profile.target_role or (target_roles[0] if target_roles else ""),
+                "target_city": str(enriched.get("target_city") or profile.target_city or "").strip(),
+                "current_city": str(enriched.get("current_city") or profile.current_city or "").strip(),
+                "years_experience": self._safe_float(enriched.get("years_experience"), profile.years_experience),
+                "skills": merged_skills,
+                "certificates": self._ensure_string_list(enriched.get("certificates"))[:10],
+                "strengths": self._ensure_string_list(enriched.get("strengths"))[:10],
+                "summary": str(enriched.get("summary") or profile.summary or "").strip() or profile.summary,
+            }
         )
 
     def _build_soft_conditions(
@@ -249,13 +333,13 @@ class ResumeParserService:
                 technical_skills=[],
                 tools=soft_conditions.tool_skills,
                 office_tools=[],
-                certificates=[],
+                certificates=profile.certificates,
                 languages=[ResumeLanguage(name=item, level="") for item in hard_conditions.languages],
             ),
             profile=ResumeProfileSection(
                 summary=profile.summary,
                 self_evaluation=profile.notes,
-                strengths=[],
+                strengths=profile.strengths,
                 interests=[],
             ),
             derived=ResumeDerived(
@@ -587,6 +671,37 @@ class ResumeParserService:
             f"Target city: {target_city or 'not specified'}. "
             f"Key skills: {skill_summary or 'not identified'}."
         )
+
+    @staticmethod
+    def _parse_llm_json(content: str) -> dict | None:
+        raw = content.strip()
+        if raw.startswith("```"):
+            raw = re.sub(r"^```(?:json)?", "", raw).strip()
+            raw = re.sub(r"```$", "", raw).strip()
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+        return parsed if isinstance(parsed, dict) else None
+
+    @staticmethod
+    def _ensure_string_list(value) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        items: list[str] = []
+        for entry in value:
+            if isinstance(entry, str):
+                text = entry.strip()
+                if text:
+                    items.append(text)
+        return items
+
+    @staticmethod
+    def _safe_float(value, fallback: float) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return fallback
 
     @staticmethod
     def _build_embedding_text(profile: ResumeProfile) -> str:

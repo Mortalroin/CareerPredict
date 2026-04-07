@@ -4,6 +4,7 @@ import json
 
 from app.schemas.match import JobMatchItem, MatchBreakdown, ResumeMatchResponse
 from app.schemas.resume import ResumeParseResponse
+from app.services.career_report_service import CareerReportService
 from app.services.job_service import JobService
 from app.services.vectorizer import SimpleVectorizer
 
@@ -12,6 +13,7 @@ class MatchService:
     def __init__(self) -> None:
         self.job_service = JobService()
         self.vectorizer = SimpleVectorizer()
+        self.career_report_service = CareerReportService()
 
     def match_resume(self, resume_data: ResumeParseResponse, limit: int = 10) -> ResumeMatchResponse:
         jobs = self.job_service.fetch_index_rows()
@@ -39,11 +41,21 @@ class MatchService:
             )
 
         ordered = sorted(results, key=lambda item: item.total_score, reverse=True)[:limit]
+        bundle = self.career_report_service.build_report_bundle(
+            resume_data=resume_data,
+            matches=ordered,
+            all_job_rows=jobs,
+        )
         return ResumeMatchResponse(
             structured_resume=resume_data.structured_resume,
             hard_conditions=resume_data.hard_conditions,
             soft_conditions=resume_data.soft_conditions,
             matches=ordered,
+            capability_scores=bundle["capability_scores"],
+            job_portraits=bundle["job_portraits"],
+            vertical_paths=bundle["vertical_paths"],
+            transition_paths=bundle["transition_paths"],
+            career_report=bundle["career_report"],
         )
 
     @staticmethod

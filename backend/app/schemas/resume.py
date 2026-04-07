@@ -24,6 +24,8 @@ class ResumeProfile(BaseModel):
     skills: list[str] = Field(default_factory=list)
     project_experience: list[ResumeProject] = Field(default_factory=list)
     work_experience: list[str] = Field(default_factory=list)
+    certificates: list[str] = Field(default_factory=list)
+    strengths: list[str] = Field(default_factory=list)
     summary: str = ""
     notes: str = ""
 
