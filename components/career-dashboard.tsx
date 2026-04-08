@@ -12,6 +12,7 @@ import { JobRecommendations } from "@/components/job-recommendations"
 import { KnowledgeInsights } from "@/components/knowledge-insights"
 import { Navbar } from "@/components/navbar"
 import { ProjectHighlights } from "@/components/project-highlights"
+import { ResumeReview } from "@/components/resume-review"
 import { ResumeUpload } from "@/components/resume-upload"
 import { TransitionPaths } from "@/components/transition-paths"
 import { analyzeResume, checkBackendHealth } from "@/lib/api"
@@ -58,7 +59,7 @@ export function CareerDashboard() {
     }
 
     setIsSubmitting(true)
-    setStatusMessage("正在解析简历、匹配岗位并刷新职业报告，请稍候……")
+    setStatusMessage("正在解析简历、匹配岗位并刷新职业报告，请稍候…")
 
     try {
       const result = await analyzeResume(file, { targetRole, notes })
@@ -95,6 +96,12 @@ export function CareerDashboard() {
           onAnalyze={handleAnalyze}
           onLoadDemo={handleLoadDemo}
         />
+        <ResumeReview
+          profile={analysis.profile}
+          projects={analysis.projects}
+          capabilityScores={analysis.capabilityScores}
+          report={analysis.report}
+        />
         <CareerProfile profile={analysis.profile} />
         <ProjectHighlights projects={analysis.projects} />
         <CapabilityMatrix items={analysis.capabilityScores} />
@@ -104,11 +111,19 @@ export function CareerDashboard() {
           candidateName={analysis.profile.name}
           reportTitle={analysis.report.reportTitle}
         />
-        <CareerRoadmap steps={analysis.roadmap} />
+        <CareerRoadmap
+          steps={analysis.roadmap}
+          candidateName={analysis.profile.name}
+          reportTitle={analysis.report.reportTitle}
+          targetRole={analysis.profile.suggestedDirection}
+          capabilityScores={analysis.capabilityScores}
+        />
         <GrowthPath
           stages={analysis.growth}
           candidateName={analysis.profile.name}
           reportTitle={analysis.report.reportTitle}
+          targetRole={analysis.profile.suggestedDirection}
+          capabilityScores={analysis.capabilityScores}
         />
         <TransitionPaths paths={analysis.transitionPaths} portraits={analysis.jobPortraits} />
         <KnowledgeInsights data={analysis.knowledge} />
@@ -116,8 +131,8 @@ export function CareerDashboard() {
       </main>
       <footer className="border-t border-border/60 bg-card/70">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <p>当前前端已支持真实 FastAPI 简历匹配与本地演示回退两种模式。</p>
-          <p>建议后端接口：POST `/api/v1/match/resume-to-jobs` 与 GET `/api/v1/health`。</p>
+          <p>当前前端已同时支持真实 FastAPI 简历匹配与本地演示回退两种模式。</p>
+          <p>建议后端接口：`POST /api/v1/match/resume-to-jobs` 与 `GET /api/v1/health`。</p>
         </div>
       </footer>
     </div>
