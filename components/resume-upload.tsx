@@ -178,8 +178,8 @@ export function ResumeUpload({
 
           <Card className="border-border/60 bg-secondary/30">
             <CardHeader>
-              <CardTitle className="text-xl">当前运行时状态</CardTitle>
-              <CardDescription>当前前端与后端并行联调中时，此面板能帮助快速定位问题。</CardDescription>
+              <CardTitle className="text-xl">当前运行状态</CardTitle>
+              <CardDescription>当前前端与后端并行联调中时，这面板能帮助快速定位问题。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-3xl border border-border/60 bg-background p-5">

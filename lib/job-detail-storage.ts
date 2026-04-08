@@ -1,9 +1,10 @@
 "use client"
 
-import type { GrowthDetailSnapshot, JobDetailSnapshot } from "@/lib/types"
+import type { GrowthDetailSnapshot, JobDetailSnapshot, RoadmapDetailSnapshot } from "@/lib/types"
 
 const JOB_PREFIX = "career-job-detail:"
 const GROWTH_PREFIX = "career-growth-detail:"
+const ROADMAP_PREFIX = "career-roadmap-detail:"
 
 export function saveJobDetailSnapshot(snapshot: JobDetailSnapshot) {
   if (typeof window === "undefined") {
@@ -50,6 +51,31 @@ export function readGrowthDetailSnapshot(stageId: string): GrowthDetailSnapshot 
 
   try {
     return JSON.parse(raw) as GrowthDetailSnapshot
+  } catch {
+    return null
+  }
+}
+
+export function saveRoadmapDetailSnapshot(snapshot: RoadmapDetailSnapshot, stepId: number) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  window.sessionStorage.setItem(`${ROADMAP_PREFIX}${stepId}`, JSON.stringify(snapshot))
+}
+
+export function readRoadmapDetailSnapshot(stepId: string): RoadmapDetailSnapshot | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+
+  const raw = window.sessionStorage.getItem(`${ROADMAP_PREFIX}${stepId}`)
+  if (!raw) {
+    return null
+  }
+
+  try {
+    return JSON.parse(raw) as RoadmapDetailSnapshot
   } catch {
     return null
   }

@@ -6,15 +6,23 @@ import { ArrowRight } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { saveGrowthDetailSnapshot } from "@/lib/job-detail-storage"
-import type { GrowthStage } from "@/lib/types"
+import type { CapabilityScoreCard, GrowthStage } from "@/lib/types"
 
 interface GrowthPathProps {
   stages: GrowthStage[]
   candidateName?: string
   reportTitle?: string
+  targetRole: string
+  capabilityScores: CapabilityScoreCard[]
 }
 
-export function GrowthPath({ stages, candidateName = "当前候选人", reportTitle = "职业规划报告" }: GrowthPathProps) {
+export function GrowthPath({
+  stages,
+  candidateName = "当前候选人",
+  reportTitle = "职业规划报告",
+  targetRole,
+  capabilityScores,
+}: GrowthPathProps) {
   return (
     <section className="bg-secondary/25 py-14 lg:py-20" id="growth">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -22,7 +30,7 @@ export function GrowthPath({ stages, candidateName = "当前候选人", reportTi
           <p className="text-sm font-medium text-primary">成长阶段</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">清晰查看未来职业成长路径</h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            这里会把你的当前阶段、下一步目标以及中期成长节点拆开展示。点击任一阶段，可继续查看通向下一阶段所需补足的学习内容与行动建议。
+            这里会把你的当前阶段、下一步目标以及中长期成长节点拆开展示。点击任一阶段，可继续查看通向下一阶段所需补足的学习内容与行动建议。
           </p>
         </div>
 
@@ -68,6 +76,8 @@ export function GrowthPath({ stages, candidateName = "当前候选人", reportTi
                           nextStage,
                           reportTitle,
                           candidateName,
+                          targetRole,
+                          capabilityScores,
                         },
                         stage.id,
                       )

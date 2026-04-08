@@ -32,12 +32,8 @@ export function TransitionPaths({ paths, portraits }: TransitionPathsProps) {
                     转岗路径
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                      {path.sourceRole}
-                    </span>
-                    <span className="rounded-full border border-border/60 px-3 py-1 text-xs text-muted-foreground">
-                      可转向
-                    </span>
+                    <span className="rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">{path.sourceRole}</span>
+                    <span className="rounded-full border border-border/60 px-3 py-1 text-xs text-muted-foreground">可转向</span>
                     <span className="rounded-full bg-accent/10 px-4 py-2 text-sm font-medium text-accent-foreground">
                       {path.targetRole}
                     </span>

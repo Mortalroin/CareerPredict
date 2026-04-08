@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 
-import { ArrowLeft, BookOpen, Compass, GraduationCap, Target } from "lucide-react"
+import { ArrowLeft, BookOpen, CheckCircle2, Compass, GraduationCap, Target } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { readGrowthDetailSnapshot } from "@/lib/job-detail-storage"
@@ -15,10 +15,20 @@ interface GrowthDetailPageProps {
 
 export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
   const [snapshot, setSnapshot] = useState<GrowthDetailSnapshot | null>(null)
+  const [selectedTopicIndex, setSelectedTopicIndex] = useState(0)
+  const [completedTopicKeys, setCompletedTopicKeys] = useState<string[]>([])
 
   useEffect(() => {
     setSnapshot(readGrowthDetailSnapshot(stageId))
   }, [stageId])
+
+  const gapItems = useMemo(() => {
+    if (!snapshot) {
+      return []
+    }
+
+    return snapshot.capabilityScores.flatMap((score) => score.gapItems).filter(Boolean).slice(0, 6)
+  }, [snapshot])
 
   const learningPlan = useMemo(() => {
     if (!snapshot) {
@@ -28,26 +38,44 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
     const currentFocus = snapshot.selectedStage.focus
     const nextFocus = snapshot.nextStage?.focus ?? []
     const missingTopics = nextFocus.filter((item) => !currentFocus.includes(item))
-
     const topics = missingTopics.length > 0 ? missingTopics : currentFocus.slice(0, 3)
 
-    return topics.map((topic) => ({
+    return topics.map((topic, index) => ({
+      key: `${topic}-${index}`,
       topic,
       actions: [
         `围绕“${topic}”补充 1 个可量化的项目案例或实践任务。`,
         `每周固定安排学习时间，整理与“${topic}”相关的方法、工具与岗位要求。`,
+        `把“${topic}”转化为简历与面试中的可表达成果。`,
       ],
     }))
   }, [snapshot])
+
+  const orderedLearningPlan = useMemo(() => {
+    return [...learningPlan].sort(
+      (a, b) => Number(completedTopicKeys.includes(a.key)) - Number(completedTopicKeys.includes(b.key)),
+    )
+  }, [completedTopicKeys, learningPlan])
+
+  const selectedTopic = orderedLearningPlan[selectedTopicIndex] ?? orderedLearningPlan[0]
+
+  function toggleTopicCompleted(topicKey: string) {
+    setCompletedTopicKeys((prev) =>
+      prev.includes(topicKey) ? prev.filter((item) => item !== topicKey) : [...prev, topicKey],
+    )
+  }
+
+  useEffect(() => {
+    if (selectedTopicIndex >= orderedLearningPlan.length) {
+      setSelectedTopicIndex(0)
+    }
+  }, [orderedLearningPlan.length, selectedTopicIndex])
 
   if (!snapshot) {
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
-          >
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
             <ArrowLeft className="h-4 w-4" />
             返回首页
           </Link>
@@ -56,7 +84,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
             <CardContent className="space-y-4 p-8">
               <h1 className="text-3xl font-semibold tracking-tight">暂未找到成长阶段详情</h1>
               <p className="text-muted-foreground">
-                当前详情页依赖你在成长阶段卡片中点击“查看成长建议”进入。如果直接刷新或单独打开该地址，页面可能没有会话中的阶段快照。
+                请从首页的成长阶段卡片点击“查看成长建议”进入，这样系统才能携带当前阶段与学习建议。
               </p>
             </CardContent>
           </Card>
@@ -72,10 +100,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-4">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
-            >
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
               <ArrowLeft className="h-4 w-4" />
               返回成长路径
             </Link>
@@ -124,8 +149,19 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
                   ))}
                 </div>
               </div>
-              <div className="rounded-2xl bg-secondary/40 p-5 text-sm leading-7 text-muted-foreground">
-                当前页面会根据你所选阶段与下一阶段的差异，推导“接下来应该继续学习什么”。这能让成长路径不只停留在展示阶段，而是具备行动指引价值。
+              <div className="rounded-2xl bg-secondary/40 p-5">
+                <p className="text-sm font-medium text-foreground">当前与你目标岗位的差距</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {gapItems.length > 0 ? (
+                    gapItems.map((item, index) => (
+                      <span key={`${item}-${index}`} className="rounded-full border border-border/60 bg-background px-3 py-1 text-sm">
+                        {item}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">目前未识别到明显短板，可继续提升项目证据与岗位表达。</span>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -148,19 +184,44 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
                 </div>
               ) : null}
 
-              <div className="space-y-4">
-                {learningPlan.map((item, index) => (
-                  <div key={`${item.topic}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-5">
-                    <p className="text-sm font-medium text-primary">学习主题 {index + 1}</p>
-                    <p className="mt-2 text-lg font-semibold">{item.topic}</p>
-                    <div className="mt-3 space-y-2 text-sm leading-7 text-muted-foreground">
-                      {item.actions.map((action, actionIndex) => (
-                        <p key={`${item.topic}-${actionIndex}`}>{action}</p>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className="grid gap-3 md:grid-cols-2">
+                {orderedLearningPlan.map((item, index) => {
+                  const completed = completedTopicKeys.includes(item.key)
+                  const selected = selectedTopic?.key === item.key
+
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setSelectedTopicIndex(index)}
+                      onDoubleClick={() => toggleTopicCompleted(item.key)}
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        selected ? "border-primary bg-primary/5" : "border-border/60 bg-background"
+                      } ${completed ? "opacity-70" : ""}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-medium">{item.topic}</p>
+                        {completed ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : null}
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        单击切换主题，双击标记完成；完成后会自动移动到下方。
+                      </p>
+                    </button>
+                  )
+                })}
               </div>
+
+              {selectedTopic ? (
+                <div className="rounded-2xl border border-border/60 bg-background p-5">
+                  <p className="text-sm font-medium text-primary">当前学习主题</p>
+                  <p className="mt-2 text-lg font-semibold">{selectedTopic.topic}</p>
+                  <div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
+                    {selectedTopic.actions.map((action, index) => (
+                      <p key={`${selectedTopic.key}-${index}`}>{action}</p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="rounded-2xl bg-secondary/40 p-5 text-sm leading-7 text-muted-foreground">
                 报告来源：{reportTitle}

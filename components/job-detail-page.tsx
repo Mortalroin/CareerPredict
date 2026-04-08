@@ -24,10 +24,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
-          >
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
             <ArrowLeft className="h-4 w-4" />
             返回首页
           </Link>
@@ -36,11 +33,9 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
             <CardContent className="space-y-4 p-8">
               <h1 className="text-3xl font-semibold tracking-tight">暂未找到岗位详情</h1>
               <p className="text-muted-foreground">
-                当前详情页依赖你在推荐结果中点击“查看岗位详情”进入。如果直接刷新或单独打开该地址，页面可能没有会话中的岗位快照。
+                请从首页推荐岗位卡片点击“查看岗位详情”进入，这样系统才能携带目标岗位画像。
               </p>
-              <p className="text-sm text-muted-foreground">
-                建议回到首页重新上传简历并点击推荐岗位卡片中的“查看岗位详情”。
-              </p>
+              <p className="text-sm text-muted-foreground">如果你直接刷新或单独打开该地址，会因为没有会话快照而无法展示详情。</p>
             </CardContent>
           </Card>
         </div>
@@ -55,10 +50,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-4">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
-            >
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
               <ArrowLeft className="h-4 w-4" />
               返回推荐结果
             </Link>
@@ -109,7 +101,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
             </CardHeader>
             <CardContent className="space-y-6">
               <DetailBlock title="核心技能" icon={Sparkles} items={portrait?.professionalSkills ?? job.tags} />
-              <DetailBlock title="证书与资质" icon={Award} items={portrait?.certificates ?? []} emptyLabel="暂无明确证书要求" />
+              <DetailBlock title="证书与资质" icon={Award} items={portrait?.certificates ?? []} emptyLabel="暂未识别到明确证书要求" />
 
               <div className="grid gap-4 md:grid-cols-2">
                 <RequirementCard title="学习要求" items={portrait?.learningRequirements ?? []} />
@@ -149,7 +141,7 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <p>{reportTitle}</p>
-                <p>该详情页会展示当前推荐岗位在本次职业分析中的画像解释，方便进一步做岗位对比和职业决策。</p>
+                <p>该详情页用于集中展示目标岗位的岗位画像、关键技能要求与推荐理由，方便做岗位对比和职业决策。</p>
               </CardContent>
             </Card>
           </div>

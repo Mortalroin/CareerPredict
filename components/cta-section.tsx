@@ -36,7 +36,7 @@ export function CTASection({ report }: CTASectionProps) {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button className="rounded-full">
                   <FileText className="h-4 w-4" />
-                  报告已可编辑
+                  报告可继续编辑
                 </Button>
                 <Button variant="outline" className="rounded-full" onClick={handleExport} disabled={!report.exportReady}>
                   <Download className="h-4 w-4" />

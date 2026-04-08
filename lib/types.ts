@@ -211,6 +211,12 @@ export interface GrowthStage {
   current?: boolean
 }
 
+export interface RoadmapTask {
+  id: string
+  title: string
+  description: string
+}
+
 export interface KnowledgeDocument {
   title: string
   relevance: number
@@ -284,4 +290,16 @@ export interface GrowthDetailSnapshot {
   nextStage?: GrowthStage
   reportTitle: string
   candidateName: string
+  targetRole: string
+  capabilityScores: CapabilityScoreCard[]
+}
+
+export interface RoadmapDetailSnapshot {
+  selectedStep: RoadmapStep
+  nextStep?: RoadmapStep
+  reportTitle: string
+  candidateName: string
+  targetRole: string
+  capabilityScores: CapabilityScoreCard[]
+  suggestedTasks: RoadmapTask[]
 }
