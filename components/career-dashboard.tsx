@@ -11,7 +11,6 @@ import { HeroSection } from "@/components/hero-section"
 import { JobRecommendations } from "@/components/job-recommendations"
 import { KnowledgeInsights } from "@/components/knowledge-insights"
 import { Navbar } from "@/components/navbar"
-import { ProjectHighlights } from "@/components/project-highlights"
 import { ResumeReview } from "@/components/resume-review"
 import { ResumeUpload } from "@/components/resume-upload"
 import { TransitionPaths } from "@/components/transition-paths"
@@ -102,8 +101,7 @@ export function CareerDashboard() {
           capabilityScores={analysis.capabilityScores}
           report={analysis.report}
         />
-        <CareerProfile profile={analysis.profile} />
-        <ProjectHighlights projects={analysis.projects} />
+        <CareerProfile profile={analysis.profile} jobs={analysis.jobs} />
         <CapabilityMatrix items={analysis.capabilityScores} />
         <JobRecommendations
           jobs={analysis.jobs}

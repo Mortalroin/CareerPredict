@@ -285,6 +285,13 @@ export interface JobDetailSnapshot {
   candidateName: string
 }
 
+export interface JobRecommendationsSnapshot {
+  jobs: JobRecommendation[]
+  portraits: JobPortraitCard[]
+  reportTitle: string
+  candidateName: string
+}
+
 export interface GrowthDetailSnapshot {
   selectedStage: GrowthStage
   nextStage?: GrowthStage

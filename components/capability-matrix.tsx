@@ -15,9 +15,9 @@ export function CapabilityMatrix({ items }: CapabilityMatrixProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 max-w-3xl">
           <p className="text-sm font-medium text-primary">四维能力分析</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">从基础要求到发展潜力的多维对比</h2>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">目标岗位胜任力匹配分析</h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            人岗匹配不仅看关键词命中。这里把基础要求、职业技能、职业素养和发展潜力拆开评分，方便理解“为什么匹配”和“差距在哪里”。
+            人岗匹配不只看关键词命中。这里会从基础要求、职业技能、职业素养和发展潜力四个维度拆开评分，方便理解“为什么匹配”和“差距在哪里”。
           </p>
         </div>
 
@@ -34,6 +34,7 @@ export function CapabilityMatrix({ items }: CapabilityMatrixProps) {
                     {Math.round(item.score)} 分
                   </div>
                 </div>
+
                 <div>
                   <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
                     <span>权重 {Math.round(item.weight * 100)}%</span>
@@ -47,8 +48,10 @@ export function CapabilityMatrix({ items }: CapabilityMatrixProps) {
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <p className="text-sm leading-7 text-muted-foreground">{item.summary}</p>
+
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-2xl bg-emerald-500/5 p-4">
                     <p className="text-sm font-medium text-emerald-700">已有优势</p>
@@ -64,6 +67,7 @@ export function CapabilityMatrix({ items }: CapabilityMatrixProps) {
                       )}
                     </div>
                   </div>
+
                   <div className="rounded-2xl bg-amber-500/5 p-4">
                     <p className="text-sm font-medium text-amber-700">待补齐项</p>
                     <div className="mt-3 flex flex-wrap gap-2">

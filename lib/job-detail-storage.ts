@@ -1,8 +1,14 @@
 "use client"
 
-import type { GrowthDetailSnapshot, JobDetailSnapshot, RoadmapDetailSnapshot } from "@/lib/types"
+import type {
+  GrowthDetailSnapshot,
+  JobDetailSnapshot,
+  JobRecommendationsSnapshot,
+  RoadmapDetailSnapshot,
+} from "@/lib/types"
 
 const JOB_PREFIX = "career-job-detail:"
+const JOB_LIST_KEY = "career-job-recommendations"
 const GROWTH_PREFIX = "career-growth-detail:"
 const ROADMAP_PREFIX = "career-roadmap-detail:"
 
@@ -26,6 +32,31 @@ export function readJobDetailSnapshot(jobId: string): JobDetailSnapshot | null {
 
   try {
     return JSON.parse(raw) as JobDetailSnapshot
+  } catch {
+    return null
+  }
+}
+
+export function saveJobRecommendationsSnapshot(snapshot: JobRecommendationsSnapshot) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  window.sessionStorage.setItem(JOB_LIST_KEY, JSON.stringify(snapshot))
+}
+
+export function readJobRecommendationsSnapshot(): JobRecommendationsSnapshot | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+
+  const raw = window.sessionStorage.getItem(JOB_LIST_KEY)
+  if (!raw) {
+    return null
+  }
+
+  try {
+    return JSON.parse(raw) as JobRecommendationsSnapshot
   } catch {
     return null
   }
