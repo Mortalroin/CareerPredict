@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, MapPin, TrendingUp } from "lucide-react"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { readJobRecommendationsSnapshot, saveDashboardScrollPosition, saveJobDetailSnapshot } from "@/lib/job-detail-storage"
 import type { JobPortraitCard, JobRecommendation, JobRecommendationsSnapshot } from "@/lib/types"
 
@@ -86,66 +86,71 @@ export function RecommendedJobsPage() {
           <div className="rounded-3xl border border-border/60 bg-card/90 px-5 py-4 text-sm text-muted-foreground">共 {sortedJobs.length} 个推荐岗位</div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="flex flex-col gap-5">
           {sortedJobs.map((job, index) => {
             const portrait = findPortrait(job, snapshot.portraits)
 
             return (
               <Card key={job.id} className="border-border/60 bg-card/90 shadow-sm">
-                <CardHeader className="space-y-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-primary">推荐岗位 {index + 1}</p>
-                      <CardTitle className="text-2xl">{job.title}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{job.company}</p>
+                <CardContent className="p-7">
+                  <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.95fr)] xl:items-stretch">
+                    <div className="flex flex-col gap-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="space-y-3">
+                          <p className="text-sm font-medium text-primary">推荐岗位 {index + 1}</p>
+                          <CardTitle className="max-w-3xl text-[2rem] leading-tight">{job.title}</CardTitle>
+                          <p className="text-base text-muted-foreground">{job.company}</p>
+                        </div>
+                        <div className={`w-fit rounded-full px-3 py-1 text-sm font-medium ${scoreStyle(job.matchScore)}`}>
+                          匹配度 {job.matchScore}%
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <BriefcaseBusiness className="h-4 w-4" />
+                          {job.salary}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="h-4 w-4" />
+                          {job.location}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {job.tags.map((tag, tagIndex) => (
+                          <span key={`${job.id}-${tag}-${tagIndex}`} className="rounded-full border border-border/60 px-3 py-1 text-sm text-muted-foreground">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      <Link
+                        href={`/jobs/${job.id}`}
+                        onClick={() => {
+                          saveDashboardScrollPosition(window.scrollY)
+                          saveJobDetailSnapshot({
+                            job,
+                            portrait,
+                            reportTitle: snapshot.reportTitle,
+                            candidateName: snapshot.candidateName,
+                          })
+                        }}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
+                      >
+                        查看岗位详情
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
                     </div>
-                    <div className={`rounded-full px-3 py-1 text-sm font-medium ${scoreStyle(job.matchScore)}`}>匹配度 {job.matchScore}%</div>
-                  </div>
-                  <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <BriefcaseBusiness className="h-4 w-4" />
-                      {job.salary}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {job.location}
-                    </span>
-                  </div>
-                </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {job.tags.map((tag, tagIndex) => (
-                      <span key={`${job.id}-${tag}-${tagIndex}`} className="rounded-full border border-border/60 px-3 py-1 text-sm text-muted-foreground">
-                        {tag}
-                      </span>
-                    ))}
+                    <div className="rounded-3xl bg-primary/5 p-5">
+                      <p className="mb-3 flex items-center gap-2 text-sm font-medium text-primary">
+                        <TrendingUp className="h-4 w-4" />
+                        推荐理由
+                      </p>
+                      <p className="text-sm leading-7 text-muted-foreground">{job.reason}</p>
+                    </div>
                   </div>
-
-                  <div className="rounded-2xl bg-primary/5 p-4">
-                    <p className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
-                      <TrendingUp className="h-4 w-4" />
-                      推荐理由
-                    </p>
-                    <p className="text-sm leading-7 text-muted-foreground">{job.reason}</p>
-                  </div>
-
-                  <Link
-                    href={`/jobs/${job.id}`}
-                    onClick={() => {
-                      saveDashboardScrollPosition(window.scrollY)
-                      saveJobDetailSnapshot({
-                        job,
-                        portrait,
-                        reportTitle: snapshot.reportTitle,
-                        candidateName: snapshot.candidateName,
-                      })
-                    }}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
-                  >
-                    查看岗位详情
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
                 </CardContent>
               </Card>
             )

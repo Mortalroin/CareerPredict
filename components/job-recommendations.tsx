@@ -70,78 +70,71 @@ export function JobRecommendations({
           ) : null}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
+        <div className="flex flex-col gap-5">
           {visibleJobs.map((job) => {
             const portrait = findPortrait(job, portraits)
 
             return (
-              <Card
-                key={job.id}
-                className="flex h-full flex-col border-border/60 bg-card/85 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-              >
-                <CardHeader className="space-y-4">
-                  <div className="flex min-h-[8.5rem] items-start justify-between gap-4">
-                    <div className="flex min-h-[8.5rem] flex-1 flex-col justify-between">
-                      <div className="space-y-2">
-                        <CardTitle className="min-h-[4rem] text-[2rem] leading-tight lg:text-[1.9rem] xl:text-[1.7rem]">
-                          {job.title}
-                        </CardTitle>
-                        <p className="min-h-[1.5rem] text-sm text-muted-foreground">{job.company}</p>
+              <Card key={job.id} className="border-border/60 bg-card/85 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <CardContent className="p-7">
+                  <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.95fr)] xl:items-stretch">
+                    <div className="flex flex-col gap-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="space-y-3">
+                          <CardTitle className="max-w-3xl text-[2rem] leading-tight lg:text-[2.2rem]">{job.title}</CardTitle>
+                          <p className="text-base text-muted-foreground">{job.company}</p>
+                        </div>
+
+                        <div className={`w-fit rounded-full px-3 py-1 text-sm font-medium ${scoreStyle(job.matchScore)}`}>
+                          匹配度 {job.matchScore}%
+                        </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
+                      <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
                           <BriefcaseBusiness className="h-4 w-4" />
                           {job.salary}
                         </span>
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1.5">
                           <MapPin className="h-4 w-4" />
                           {job.location}
                         </span>
                       </div>
-                    </div>
 
-                    <div className="flex min-w-[7rem] justify-end pt-1">
-                      <div className={`rounded-full px-3 py-1 text-sm font-medium ${scoreStyle(job.matchScore)}`}>
-                        匹配度 {job.matchScore}%
+                      <div className="flex flex-wrap gap-2">
+                        {job.tags.map((tag, index) => (
+                          <span key={`${job.id}-${tag}-${index}`} className="rounded-full border border-border/60 px-3 py-1 text-sm text-muted-foreground">
+                            {tag}
+                          </span>
+                        ))}
                       </div>
+
+                      <Link
+                        href={`/jobs/${job.id}`}
+                        onClick={() => {
+                          saveDashboardScrollPosition(window.scrollY)
+                          saveJobDetailSnapshot({
+                            job,
+                            portrait,
+                            reportTitle,
+                            candidateName,
+                          })
+                        }}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
+                      >
+                        查看岗位详情
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+
+                    <div className="flex h-full flex-col rounded-3xl bg-primary/5 p-5">
+                      <p className="mb-3 flex items-center gap-2 text-sm font-medium text-primary">
+                        <TrendingUp className="h-4 w-4" />
+                        推荐理由
+                      </p>
+                      <p className="text-sm leading-7 text-muted-foreground">{job.reason}</p>
                     </div>
                   </div>
-                </CardHeader>
-
-                <CardContent className="flex h-full flex-col gap-4">
-                  <div className="flex min-h-[4.5rem] flex-wrap content-start gap-2">
-                    {job.tags.map((tag, index) => (
-                      <span key={`${job.id}-${tag}-${index}`} className="rounded-full border border-border/60 px-3 py-1 text-sm text-muted-foreground">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex min-h-[10rem] flex-1 flex-col rounded-2xl bg-primary/5 p-4">
-                    <p className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
-                      <TrendingUp className="h-4 w-4" />
-                      推荐理由
-                    </p>
-                    <p className="text-sm leading-7 text-muted-foreground">{job.reason}</p>
-                  </div>
-
-                  <Link
-                    href={`/jobs/${job.id}`}
-                    onClick={() => {
-                      saveDashboardScrollPosition(window.scrollY)
-                      saveJobDetailSnapshot({
-                        job,
-                        portrait,
-                        reportTitle,
-                        candidateName,
-                      })
-                    }}
-                    className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
-                  >
-                    查看岗位详情
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
                 </CardContent>
               </Card>
             )
