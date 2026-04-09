@@ -1,7 +1,7 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { ArrowLeft, BookCheck, CirclePlus, RotateCcw, Target } from "lucide-react"
 
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { readRoadmapDetailSnapshot } from "@/lib/job-detail-storage"
-import type { CapabilityScoreCard, RoadmapDetailSnapshot, RoadmapTask } from "@/lib/types"
+import type { RoadmapDetailSnapshot, RoadmapTask } from "@/lib/types"
 
 interface RoadmapDetailPageProps {
   stepId: string
@@ -20,6 +20,7 @@ export function RoadmapDetailPage({ stepId }: RoadmapDetailPageProps) {
   const [tasks, setTasks] = useState<RoadmapTask[]>([])
   const [completedIds, setCompletedIds] = useState<string[]>([])
   const [draftTask, setDraftTask] = useState("")
+  const router = useRouter()
 
   useEffect(() => {
     const nextSnapshot = readRoadmapDetailSnapshot(stepId)
@@ -38,6 +39,15 @@ export function RoadmapDetailPage({ stepId }: RoadmapDetailPageProps) {
   const orderedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => Number(completedIds.includes(a.id)) - Number(completedIds.includes(b.id)))
   }, [tasks, completedIds])
+
+  function handleBack() {
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
+
+    router.push("/")
+  }
 
   function addTask() {
     const title = draftTask.trim()
@@ -64,17 +74,15 @@ export function RoadmapDetailPage({ stepId }: RoadmapDetailPageProps) {
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
+          <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
             <ArrowLeft className="h-4 w-4" />
             返回首页
-          </Link>
+          </button>
 
           <Card className="mt-6 border-border/60">
             <CardContent className="space-y-4 p-8">
               <h1 className="text-3xl font-semibold tracking-tight">暂未找到路线阶段详情</h1>
-              <p className="text-muted-foreground">
-                请从首页的职业路径规划区域点击“查看详情”进入，这样系统才能携带当前阶段与任务建议。
-              </p>
+              <p className="text-muted-foreground">请从首页的职业路径规划区域点击“查看详情”进入，这样系统才能携带当前阶段与任务建议。</p>
             </CardContent>
           </Card>
         </div>
@@ -89,10 +97,10 @@ export function RoadmapDetailPage({ stepId }: RoadmapDetailPageProps) {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
+            <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
               <ArrowLeft className="h-4 w-4" />
               返回职业路径
-            </Link>
+            </button>
             <div className="space-y-2">
               <p className="text-sm font-medium text-primary">路线阶段详情</p>
               <h1 className="text-4xl font-semibold tracking-tight">{selectedStep.title}</h1>
@@ -213,9 +221,7 @@ export function RoadmapDetailPage({ stepId }: RoadmapDetailPageProps) {
                   </div>
                 ))}
 
-                <div className="rounded-2xl bg-secondary/40 p-4 text-sm leading-7 text-muted-foreground">
-                  报告来源：{reportTitle}
-                </div>
+                <div className="rounded-2xl bg-secondary/40 p-4 text-sm leading-7 text-muted-foreground">报告来源：{reportTitle}</div>
               </CardContent>
             </Card>
           </div>
@@ -251,7 +257,7 @@ function buildNextStageAdvice(currentTitle: string, nextTitle: string) {
   }
 
   return [
-    { title: "优化简历版本", description: "针对高匹配岗位定制关键词与项目表述，提升简历通过率。" },
+    { title: "优化简历版本", description: "针对高匹配岗位定制关键词与项目表达，提升简历通过率。" },
     { title: "准备面试故事", description: "围绕问题、行动、结果整理 2-3 段能直接复用的回答素材。" },
     { title: "建立投递复盘", description: "按周跟踪投递、面试与反馈，及时调整后续策略。" },
   ]

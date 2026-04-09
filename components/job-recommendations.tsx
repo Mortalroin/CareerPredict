@@ -6,7 +6,7 @@ import { ArrowRight, BriefcaseBusiness, ChevronRight, MapPin, TrendingUp } from 
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { saveJobDetailSnapshot, saveJobRecommendationsSnapshot } from "@/lib/job-detail-storage"
+import { saveDashboardScrollPosition, saveJobDetailSnapshot, saveJobRecommendationsSnapshot } from "@/lib/job-detail-storage"
 import type { JobPortraitCard, JobRecommendation } from "@/lib/types"
 
 interface JobRecommendationsProps {
@@ -26,6 +26,7 @@ function findPortrait(job: JobRecommendation, portraits: JobPortraitCard[]) {
   const normalizedTitle = job.title.trim().toLowerCase()
 
   return (
+    portraits.find((portrait) => portrait.jobId === job.id) ||
     portraits.find((portrait) => portrait.roleName.trim().toLowerCase() === normalizedTitle) ||
     portraits.find((portrait) => portrait.roleName.includes(job.title) || job.title.includes(portrait.roleName))
   )
@@ -41,6 +42,7 @@ export function JobRecommendations({
   const hasMoreJobs = jobs.length > 4
 
   function handleOpenMoreJobs() {
+    saveDashboardScrollPosition(window.scrollY)
     saveJobRecommendationsSnapshot({
       jobs,
       portraits,
@@ -126,14 +128,15 @@ export function JobRecommendations({
 
                   <Link
                     href={`/jobs/${job.id}`}
-                    onClick={() =>
+                    onClick={() => {
+                      saveDashboardScrollPosition(window.scrollY)
                       saveJobDetailSnapshot({
                         job,
                         portrait,
                         reportTitle,
                         candidateName,
                       })
-                    }
+                    }}
                     className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
                   >
                     查看岗位详情

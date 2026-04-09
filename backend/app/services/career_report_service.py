@@ -165,19 +165,43 @@ class CareerReportService:
                     + job.tags.skill_tags
                 )
             )[:8]
+            if not skills:
+                skills = self._portrait_skill_fallback(job, family)
+
+            certificates = self._infer_certificates(job, family) or self._certificate_fallback(family)
+            learning_requirements = self._infer_learning_requirements(job, family, skills) or self._requirement_fallback(
+                "learning",
+                family,
+                skills,
+            )
+            stress_requirements = self._infer_stress_requirements(job, family) or self._requirement_fallback(
+                "stress",
+                family,
+                skills,
+            )
+            communication_requirements = self._infer_communication_requirements(
+                job,
+                family,
+            ) or self._requirement_fallback("communication", family, skills)
+            internship_requirements = self._infer_internship_requirements(job, family) or self._requirement_fallback(
+                "internship",
+                family,
+                skills,
+            )
 
             portraits.append(
                 JobPortrait(
+                    job_id=job.job_id,
                     role_name=job.basic_info.title,
                     role_family=family,
                     summary=self._portrait_summary(job, family, skills),
                     professional_skills=skills,
-                    certificates=self._infer_certificates(job, family),
+                    certificates=certificates,
                     innovation_points=self._infer_innovation_points(job, family, skills),
-                    learning_requirements=self._infer_learning_requirements(job, family, skills),
-                    stress_requirements=self._infer_stress_requirements(job, family),
-                    communication_requirements=self._infer_communication_requirements(job, family),
-                    internship_requirements=self._infer_internship_requirements(job, family),
+                    learning_requirements=learning_requirements,
+                    stress_requirements=stress_requirements,
+                    communication_requirements=communication_requirements,
+                    internship_requirements=internship_requirements,
                     representative_companies=[job.basic_info.company_name],
                 )
             )
@@ -213,55 +237,81 @@ class CareerReportService:
         matches: list[JobMatchItem],
         jobs: list[StructuredJob],
     ) -> list[TransitionPath]:
-        source_role = self._resolve_source_role(resume_data)
-        source_family = self._role_family(source_role)
-        candidate_skills = set(resume_data.soft_conditions.core_skills + resume_data.soft_conditions.tool_skills)
-        target_map: "OrderedDict[str, JobMatchItem]" = OrderedDict()
+        role_catalog = self._build_transition_role_catalog(matches=matches, jobs=jobs)
+        if not role_catalog:
+            return []
 
+        relevant_families = {
+            self._role_family(match.title)
+            for match in matches[:8]
+            if self._role_family(match.title) != "general"
+        }
+
+        source_titles: list[str] = []
         for match in matches:
-            if self._role_family(match.title) != source_family:
-                target_map.setdefault(match.title, match)
+            title = self._clean_title(match.title)
+            if title in role_catalog and title not in source_titles:
+                source_titles.append(title)
+            if len(source_titles) >= 5:
+                break
 
-        for job in jobs:
-            title = job.basic_info.title
-            family = self._role_family(title)
-            if family == source_family or title in target_map:
-                continue
-
-            overlap = candidate_skills & set(job.requirements.required_skills + job.requirements.required_tools)
-            if overlap or family in set(resume_data.soft_conditions.domain_tags):
-                target_map.setdefault(
-                    title,
-                    JobMatchItem(
-                        job_id=job.job_id,
-                        title=title,
-                        company_name=job.basic_info.company_name,
-                        city=job.basic_info.city,
-                        similarity_score=0.0,
-                        total_score=0.0,
-                        breakdown=MatchBreakdown(),
-                    ),
-                )
+        if len(source_titles) < 5:
+            ranked_catalog = sorted(
+                role_catalog.values(),
+                key=lambda item: (
+                    item["family"] in relevant_families,
+                    item["score"],
+                    len(item["skills"]),
+                ),
+                reverse=True,
+            )
+            for item in ranked_catalog:
+                title = str(item["title"])
+                if title not in source_titles:
+                    source_titles.append(title)
+                if len(source_titles) >= 5:
+                    break
 
         transitions: list[TransitionPath] = []
-        for title, match in list(target_map.items())[:10]:
-            bridge_skills = list(
-                OrderedDict.fromkeys(
-                    match.breakdown.skill_overlap
-                    + resume_data.soft_conditions.core_skills[:4]
-                    + resume_data.soft_conditions.tool_skills[:3]
-                )
-            )[:6]
-            target_family = self._role_family(title)
-            transitions.append(
-                TransitionPath(
-                    source_role=source_role,
-                    target_role=title,
-                    reason=self._build_transition_reason(source_role, title, target_family, bridge_skills),
-                    bridge_skills=bridge_skills,
-                    action_items=self._build_transition_actions(source_role, title, target_family, bridge_skills),
-                )
+        match_titles = {self._clean_title(match.title) for match in matches[:10]}
+
+        for source_title in source_titles[:5]:
+            source_entry = role_catalog.get(source_title)
+            if source_entry is None:
+                continue
+
+            targets = self._select_transition_targets(
+                source_entry=source_entry,
+                role_catalog=role_catalog,
+                relevant_families=relevant_families,
+                match_titles=match_titles,
             )
+
+            for target_entry in targets[:3]:
+                bridge_skills = self._bridge_skills_for_roles(
+                    source_entry=source_entry,
+                    target_entry=target_entry,
+                )
+                transitions.append(
+                    TransitionPath(
+                        source_role=source_title,
+                        target_role=str(target_entry["title"]),
+                        reason=self._build_transition_reason(
+                            source_title,
+                            str(target_entry["title"]),
+                            str(target_entry["family"]),
+                            bridge_skills,
+                        ),
+                        bridge_skills=bridge_skills,
+                        action_items=self._build_transition_actions(
+                            source_title,
+                            str(target_entry["title"]),
+                            str(target_entry["family"]),
+                            bridge_skills,
+                        ),
+                    )
+                )
+
         return transitions
 
     def _build_career_report(
@@ -360,6 +410,137 @@ class CareerReportService:
         if any(keyword in lower for keyword in ["assistant"]) or any(keyword in title for keyword in ["助理", "总助", "秘书", "专员"]):
             return "assistant"
         return "general"
+
+    @staticmethod
+    def _transition_family_map() -> dict[str, list[str]]:
+        return {
+            "product": ["operations", "implementation", "data_ai", "sales", "assistant"],
+            "operations": ["product", "sales", "customer_service", "implementation", "assistant"],
+            "implementation": ["customer_service", "operations", "sales", "engineering", "product"],
+            "customer_service": ["implementation", "sales", "operations", "assistant"],
+            "sales": ["customer_service", "operations", "implementation", "assistant", "product"],
+            "engineering": ["testing", "implementation", "data_ai", "product"],
+            "testing": ["engineering", "implementation", "data_ai", "product"],
+            "data_ai": ["product", "engineering", "operations", "testing"],
+            "assistant": ["operations", "sales", "customer_service", "implementation", "product"],
+            "general": ["operations", "assistant", "sales", "customer_service"],
+        }
+
+    def _build_transition_role_catalog(
+        self,
+        *,
+        matches: list[JobMatchItem],
+        jobs: list[StructuredJob],
+    ) -> OrderedDict[str, dict[str, object]]:
+        match_score_map = {
+            self._clean_title(match.title): match.total_score
+            for match in matches
+        }
+        catalog: OrderedDict[str, dict[str, object]] = OrderedDict()
+
+        for job in jobs:
+            title = self._clean_title(job.basic_info.title)
+            family = self._role_family(title)
+            skills = list(
+                OrderedDict.fromkeys(
+                    skill
+                    for skill in (
+                        job.requirements.required_skills
+                        + job.requirements.required_tools
+                        + job.tags.skill_tags
+                    )
+                    if skill
+                )
+            )[:8]
+
+            existing = catalog.get(title)
+            score = float(match_score_map.get(title, 0.0))
+            if existing is None:
+                catalog[title] = {
+                    "title": title,
+                    "family": family,
+                    "skills": skills,
+                    "score": score,
+                }
+                continue
+
+            existing["skills"] = list(OrderedDict.fromkeys(list(existing["skills"]) + skills))[:8]
+            existing["score"] = max(float(existing["score"]), score)
+
+        return catalog
+
+    def _select_transition_targets(
+        self,
+        *,
+        source_entry: dict[str, object],
+        role_catalog: OrderedDict[str, dict[str, object]],
+        relevant_families: set[str],
+        match_titles: set[str],
+    ) -> list[dict[str, object]]:
+        source_title = str(source_entry["title"])
+        source_family = str(source_entry["family"])
+        source_skills = set(source_entry["skills"])
+        family_targets = self._transition_family_map().get(source_family, ["general"])
+
+        candidates: list[tuple[float, dict[str, object]]] = []
+        for target_entry in role_catalog.values():
+            target_title = str(target_entry["title"])
+            target_family = str(target_entry["family"])
+            if target_title == source_title or target_family == source_family:
+                continue
+
+            shared_skills = source_skills & set(target_entry["skills"])
+            score = 0.0
+            if target_family in family_targets:
+                score += 40
+            if target_family in relevant_families:
+                score += 12
+            if target_title in match_titles:
+                score += 10
+            score += len(shared_skills) * 8
+            score += float(target_entry["score"]) * 0.15
+            if target_family == "general":
+                score -= 8
+            if score <= 0:
+                continue
+            candidates.append((score, target_entry))
+
+        candidates.sort(
+            key=lambda item: (
+                item[0],
+                len(item[1]["skills"]),
+                str(item[1]["title"]),
+            ),
+            reverse=True,
+        )
+
+        selected: list[dict[str, object]] = []
+        seen_titles: set[str] = set()
+        for _, entry in candidates:
+            title = str(entry["title"])
+            if title in seen_titles:
+                continue
+            selected.append(entry)
+            seen_titles.add(title)
+            if len(selected) >= 3:
+                break
+
+        return selected
+
+    @staticmethod
+    def _bridge_skills_for_roles(
+        *,
+        source_entry: dict[str, object],
+        target_entry: dict[str, object],
+    ) -> list[str]:
+        source_skills = list(source_entry["skills"])
+        target_skills = list(target_entry["skills"])
+        shared = [skill for skill in source_skills if skill in target_skills]
+        if shared:
+            return list(OrderedDict.fromkeys(shared))[:6]
+
+        fallback = list(OrderedDict.fromkeys(source_skills[:3] + target_skills[:3]))
+        return fallback[:6]
 
     @staticmethod
     def _build_progression_titles(base_title: str) -> list[tuple[str, str, str]]:
@@ -679,6 +860,119 @@ class CareerReportService:
                 ],
             ),
         ]
+
+    @staticmethod
+    def _portrait_skill_fallback(job: StructuredJob, family: str) -> list[str]:
+        skill_map = {
+            "product": ["需求分析", "平台规划", "业务抽象", "跨团队协同"],
+            "implementation": ["客户沟通", "交付支持", "问题排查", "培训演示"],
+            "testing": ["用例设计", "缺陷跟踪", "质量验证", "回归测试"],
+            "operations": ["数据分析", "内容运营", "结果复盘", "活动执行"],
+            "sales": ["客户沟通", "方案表达", "需求识别", "转化推进"],
+            "customer_service": ["服务响应", "问题跟进", "用户沟通", "满意度提升"],
+            "assistant": ["流程跟进", "资料整理", "会议协同", "事务执行"],
+            "engineering": ["编码实现", "系统调试", "问题定位", "工程交付"],
+            "data_ai": ["数据分析", "模型理解", "结果洞察", "业务抽象"],
+            "general": ["沟通协作", "执行落地", "问题处理", "结果闭环"],
+        }
+        return skill_map.get(family, skill_map["general"])[:6]
+
+    @staticmethod
+    def _certificate_fallback(family: str) -> list[str]:
+        certificate_map = {
+            "product": ["项目成果证明", "方案材料"],
+            "implementation": ["交付案例证明", "工具熟练证明"],
+            "testing": ["测试案例证明", "质量闭环材料"],
+            "operations": ["数据复盘材料", "运营项目证明"],
+            "sales": ["客户案例证明", "转化结果材料"],
+            "customer_service": ["服务案例证明", "沟通处理记录"],
+            "assistant": ["流程协同材料", "事务处理证明"],
+            "engineering": ["项目成果证明", "工程实现材料"],
+            "data_ai": ["数据项目材料", "分析报告证明"],
+            "general": ["项目证明材料", "工具熟练证明"],
+        }
+        return certificate_map.get(family, certificate_map["general"])
+
+    @staticmethod
+    def _requirement_fallback(kind: str, family: str, skills: list[str]) -> list[str]:
+        top_skills = "、".join(skills[:2]) if skills else "岗位核心技能"
+        fallback_map = {
+            "learning": {
+                "product": [
+                    "持续学习平台型产品的方法论、系统设计思维和业务抽象能力。",
+                    f"围绕 {top_skills} 补足需求分析、方案设计与迭代复盘能力。",
+                ],
+                "implementation": [
+                    "持续学习实施流程、交付方法和常见问题排查思路。",
+                    f"围绕 {top_skills} 补足演示、培训与远程支持能力。",
+                ],
+                "testing": [
+                    "持续学习测试方法、用例设计和质量标准。",
+                    f"围绕 {top_skills} 补足功能验证、缺陷分析与回归测试经验。",
+                ],
+                "general": [
+                    "持续学习目标岗位常用工具、方法和业务场景知识。",
+                    f"围绕 {top_skills} 制定阶段性学习与复盘计划。",
+                ],
+            },
+            "communication": {
+                "product": [
+                    "能够在研发、运营、业务之间清晰同步目标、范围与推进节奏。",
+                    "能够把复杂需求拆成阶段任务，并推动多方形成一致决策。",
+                ],
+                "implementation": [
+                    "能够与客户、内部团队同步实施进度、风险与处理结果。",
+                    "能把复杂问题拆解成清晰步骤并推动闭环解决。",
+                ],
+                "testing": [
+                    "能够把问题现象、复现步骤与影响范围表达清楚。",
+                    "能与研发、产品协同推动缺陷修复与质量闭环。",
+                ],
+                "general": [
+                    "能够清晰表达任务进度、问题与解决方案。",
+                    "能够在跨团队协作中保持顺畅配合和有效反馈。",
+                ],
+            },
+            "stress": {
+                "product": [
+                    "能在多需求并行、优先级频繁变化时保持判断稳定。",
+                    "面对跨部门反馈和版本压力时，能够稳住节奏并推动闭环。",
+                ],
+                "implementation": [
+                    "能够在现场支持、交付节点和多任务并行时保持稳定执行。",
+                    "面对临时需求、客户反馈和问题升级时能快速响应。",
+                ],
+                "testing": [
+                    "需要在回归高峰期保持细致验证与优先级判断。",
+                    "面对缺陷堆积和时间压力时能保证测试闭环。",
+                ],
+                "general": [
+                    "能在多任务并行与节奏变化中保持稳定执行。",
+                    "面对临时需求和反馈调整时能够快速适应。",
+                ],
+            },
+            "internship": {
+                "product": [
+                    "产品实习、平台项目、校园项目或竞赛经历都可以作为有效证明。",
+                    "建议补充能体现业务抽象、方案设计与落地结果的项目案例。",
+                ],
+                "implementation": [
+                    "实施、技术支持、客户服务类实习经历都可以作为证明。",
+                    "建议补充培训、演示、排查或交付相关案例。",
+                ],
+                "testing": [
+                    "测试实习、课程验证项目或竞赛经历都可以作为证明。",
+                    "建议补充用例设计、缺陷跟踪或回归验证案例。",
+                ],
+                "general": [
+                    "实习、校园项目、竞赛或课程实践都可以形成加分证明。",
+                    "建议补充能体现岗位相关能力的项目案例与量化结果。",
+                ],
+            },
+        }
+
+        family_items = fallback_map.get(kind, {})
+        return family_items.get(family, family_items.get("general", []))
 
     @staticmethod
     def _compute_completeness_score(resume_data: ResumeParseResponse) -> float:

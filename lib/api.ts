@@ -598,6 +598,7 @@ function mapBackendResponse(
       const professionalSkills = dedupeList(item.professional_skills.map(formatSkill)).slice(0, 8)
 
       return {
+        jobId: cleanText(item.job_id),
         roleName,
         roleFamily: formatRoleFamily(item.role_family),
         summary: normalizePortraitSummary(item.summary, roleName, item.role_family, professionalSkills),

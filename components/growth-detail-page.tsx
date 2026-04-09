@@ -1,7 +1,7 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { ArrowLeft, BookOpen, CheckCircle2, Compass, GraduationCap, Target } from "lucide-react"
 
@@ -17,6 +17,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
   const [snapshot, setSnapshot] = useState<GrowthDetailSnapshot | null>(null)
   const [selectedTopicIndex, setSelectedTopicIndex] = useState(0)
   const [completedTopicKeys, setCompletedTopicKeys] = useState<string[]>([])
+  const router = useRouter()
 
   useEffect(() => {
     setSnapshot(readGrowthDetailSnapshot(stageId))
@@ -46,7 +47,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
       actions: [
         `围绕“${topic}”补充 1 个可量化的项目案例或实践任务。`,
         `每周固定安排学习时间，整理与“${topic}”相关的方法、工具与岗位要求。`,
-        `把“${topic}”转化为简历与面试中的可表达成果。`,
+        `把“${topic}”转化为简历与面试中可直接表达的成果。`,
       ],
     }))
   }, [snapshot])
@@ -59,33 +60,40 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
 
   const selectedTopic = orderedLearningPlan[selectedTopicIndex] ?? orderedLearningPlan[0]
 
-  function toggleTopicCompleted(topicKey: string) {
-    setCompletedTopicKeys((prev) =>
-      prev.includes(topicKey) ? prev.filter((item) => item !== topicKey) : [...prev, topicKey],
-    )
-  }
-
   useEffect(() => {
     if (selectedTopicIndex >= orderedLearningPlan.length) {
       setSelectedTopicIndex(0)
     }
   }, [orderedLearningPlan.length, selectedTopicIndex])
 
+  function toggleTopicCompleted(topicKey: string) {
+    setCompletedTopicKeys((prev) =>
+      prev.includes(topicKey) ? prev.filter((item) => item !== topicKey) : [...prev, topicKey],
+    )
+  }
+
+  function handleBack() {
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
+
+    router.push("/")
+  }
+
   if (!snapshot) {
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
+          <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
             <ArrowLeft className="h-4 w-4" />
             返回首页
-          </Link>
+          </button>
 
           <Card className="mt-6 border-border/60">
             <CardContent className="space-y-4 p-8">
               <h1 className="text-3xl font-semibold tracking-tight">暂未找到成长阶段详情</h1>
-              <p className="text-muted-foreground">
-                请从首页的成长阶段卡片点击“查看成长建议”进入，这样系统才能携带当前阶段与学习建议。
-              </p>
+              <p className="text-muted-foreground">请从首页的成长阶段卡片点击“查看成长建议”进入，这样系统才能携带当前阶段与学习建议。</p>
             </CardContent>
           </Card>
         </div>
@@ -100,10 +108,10 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
+            <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
               <ArrowLeft className="h-4 w-4" />
               返回成长路径
-            </Link>
+            </button>
             <div className="space-y-3">
               <p className="text-sm font-medium text-primary">成长阶段详情</p>
               <h1 className="text-4xl font-semibold tracking-tight">{selectedStage.role}</h1>
@@ -150,7 +158,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
                 </div>
               </div>
               <div className="rounded-2xl bg-secondary/40 p-5">
-                <p className="text-sm font-medium text-foreground">当前与你目标岗位的差距</p>
+                <p className="text-sm font-medium text-foreground">当前与目标岗位的差距</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {gapItems.length > 0 ? (
                     gapItems.map((item, index) => (
@@ -203,9 +211,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
                         <p className="font-medium">{item.topic}</p>
                         {completed ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : null}
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        单击切换主题，双击标记完成；完成后会自动移动到下方。
-                      </p>
+                      <p className="mt-2 text-sm text-muted-foreground">单击切换主题，双击标记完成；完成后会自动移动到下方。</p>
                     </button>
                   )
                 })}
@@ -223,9 +229,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
                 </div>
               ) : null}
 
-              <div className="rounded-2xl bg-secondary/40 p-5 text-sm leading-7 text-muted-foreground">
-                报告来源：{reportTitle}
-              </div>
+              <div className="rounded-2xl bg-secondary/40 p-5 text-sm leading-7 text-muted-foreground">报告来源：{reportTitle}</div>
             </CardContent>
           </Card>
         </div>

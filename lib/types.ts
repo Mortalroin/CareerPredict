@@ -33,6 +33,7 @@ export interface BackendCapabilityScore {
 }
 
 export interface BackendJobPortrait {
+  job_id: string
   role_name: string
   role_family: string
   summary: string
@@ -179,6 +180,7 @@ export interface ProjectHighlight {
 }
 
 export interface JobPortraitCard {
+  jobId?: string
   roleName: string
   roleFamily: string
   summary: string
@@ -276,6 +278,13 @@ export interface CareerAnalysisResponse {
   }[]
   knowledge: KnowledgeInsightsData
   report: ReportSummary
+}
+
+export interface DashboardSnapshot {
+  analysis: CareerAnalysisResponse
+  targetRole: string
+  notes: string
+  statusMessage: string
 }
 
 export interface JobDetailSnapshot {

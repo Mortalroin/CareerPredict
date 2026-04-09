@@ -16,10 +16,10 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
     <section className="py-14 lg:py-20" id="knowledge">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 max-w-3xl">
-          <p className="text-sm font-medium text-primary">岗位洞察</p>
+          <p className="text-sm font-medium text-primary">目标岗位市场分析</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">把市场信息转成下一步可执行动作</h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            当后端返回岗位样本、能力趋势、热门技能与推荐学习项后，这里会统一展示，帮助你把“看到了什么”转成“接下来该做什么”。
+            这里会汇总目标岗位的岗位样本、招聘趋势、热门技能与推荐学习项，帮助同学更快理解“市场看重什么”“自己下一步该补什么”。
           </p>
         </div>
 
@@ -40,7 +40,7 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
             ))}
           </InsightCard>
 
-          <InsightCard title="关键趋势" icon={TrendingUp}>
+          <InsightCard title="岗位趋势观察" icon={TrendingUp}>
             {data.trends.map((trend, index) => (
               <div key={`${trend.title}-${trend.value}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-4">
                 <p className="font-medium">{trend.title}</p>
@@ -66,7 +66,7 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
             ))}
           </InsightCard>
 
-          <InsightCard title="推荐学习项" icon={GraduationCap}>
+          <InsightCard title="建议学习方向" icon={GraduationCap}>
             {data.certifications.map((item, index) => (
               <div key={`${item}-${index}`} className="rounded-2xl border border-border/60 bg-background/80 p-4">
                 <p className="font-medium">{item}</p>

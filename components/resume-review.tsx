@@ -1,6 +1,14 @@
 "use client"
 
-import { AlertTriangle, CircleCheckBig, FileBadge2, FolderKanban, PencilRuler, ScrollText, Sparkles } from "lucide-react"
+import {
+  AlertTriangle,
+  CircleCheckBig,
+  FileBadge2,
+  FolderKanban,
+  PencilRuler,
+  ScrollText,
+  Sparkles,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +27,12 @@ interface ResumeTemplateField {
   example: string
 }
 
+interface SkillGroup {
+  label: string
+  items: string[]
+  emptyLabel: string
+}
+
 export function ResumeReview({ profile, projects, capabilityScores, report }: ResumeReviewProps) {
   const resumeFacts = buildResumeFacts(profile)
   const highlights = buildHighlights(profile, projects)
@@ -26,9 +40,10 @@ export function ResumeReview({ profile, projects, capabilityScores, report }: Re
   const suggestions = buildSuggestions(profile, projects, capabilityScores, report)
   const templateFields = buildTemplateFields(profile, projects)
   const completionStatus = getCompletionStatus(report.completionRate)
-  const displayedSkills = profile.skills.slice(0, 10)
+  const displayedSkills = profile.skills.slice(0, 12)
+  const groupedSkills = buildSkillGroups(displayedSkills)
   const projectEvidence = projects.slice(0, 3)
-  const priorityItems = dedupe([...suggestions.slice(0, 2), ...gaps.slice(0, 2), ...highlights.slice(0, 1)]).slice(0, 3)
+  const priorityItems = dedupe([...gaps.slice(0, 2), ...suggestions.slice(0, 2), ...highlights.slice(0, 1)]).slice(0, 3)
 
   function handleOptimize() {
     if (typeof document === "undefined") {
@@ -52,7 +67,7 @@ export function ResumeReview({ profile, projects, capabilityScores, report }: Re
                   当前简历快照
                 </h2>
                 <p className="mt-4 text-base leading-7 text-muted-foreground lg:text-lg">
-                  先看系统已经识别到的核心信息，再决定应该补哪些经历、成果和关键词，避免后面的能力分析失焦。
+                  梳理关键信息，判断简历缺陷，一键修复简历。
                 </p>
               </div>
 
@@ -66,16 +81,17 @@ export function ResumeReview({ profile, projects, capabilityScores, report }: Re
                     {completionStatus.label}
                   </span>
                 </div>
+
                 <div className="mt-4 h-2.5 rounded-full bg-background/80">
                   <div
                     className={`h-2.5 rounded-full transition-all ${completionStatus.barClassName}`}
                     style={{ width: `${Math.max(8, Math.min(report.completionRate, 100))}%` }}
                   />
                 </div>
-                <div className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
-                  {suggestions.slice(0, 2).map((item, index) => (
-                    <p key={`quick-tip-${index}`}>{item}</p>
-                  ))}
+
+                <div className="mt-4 rounded-2xl border border-border/60 bg-background/85 p-4">
+                  <p className="text-sm font-medium text-foreground">当前判断</p>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">{completionStatus.summary}</p>
                 </div>
               </div>
             </div>
@@ -89,27 +105,76 @@ export function ResumeReview({ profile, projects, capabilityScores, report }: Re
               ))}
             </div>
 
-            <div className="mt-6 rounded-3xl border border-border/60 bg-background/75 p-5">
-              <p className="text-sm font-medium text-foreground">已识别到的关键信息</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {displayedSkills.length > 0 ? (
-                  displayedSkills.map((skill, index) => (
-                    <span
-                      key={`${skill}-${index}`}
-                      className="rounded-full border border-border/60 bg-secondary/20 px-3 py-1.5 text-sm text-foreground"
-                    >
-                      {skill}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">暂未识别到明确技能标签，建议补充工具、方法和项目关键词。</span>
-                )}
+            <div className="mt-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+              <div className="rounded-3xl border border-border/60 bg-background/75 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">已识别到的关键信息</p>
+                    <p className="mt-1 text-sm text-muted-foreground">按类型查看系统提取到的技能、工具、经验和语言信息，方便你判断哪些内容已经写清楚。</p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                    共 {displayedSkills.length || 0} 项
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {groupedSkills.map((group) => (
+                    <div key={group.label} className="rounded-2xl border border-border/60 bg-secondary/10 p-4">
+                      <p className="text-sm font-medium text-foreground">{group.label}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {group.items.length > 0 ? (
+                          group.items.map((item) => (
+                            <span
+                              key={`${group.label}-${item}`}
+                              className="rounded-full border border-border/60 bg-background px-3 py-1 text-sm text-foreground"
+                            >
+                              {item}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-muted-foreground">{group.emptyLabel}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-border/60 bg-background/75 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">优先补充顺序</p>
+                    <p className="mt-1 text-sm text-muted-foreground">先处理最影响匹配度的内容，再处理表达优化，修改效率会更高。</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {priorityItems.map((item, index) => {
+                    const palette = getPriorityPalette(index)
+                    const title = index === 0 ? "项目证据" : index === 1 ? "岗位表达" : "说服材料"
+
+                    return (
+                      <div
+                        key={`priority-${index}`}
+                        className={`flex gap-4 rounded-2xl border p-4 ${palette.container}`}
+                      >
+                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold ${palette.badge}`}>
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground">{title}</p>
+                          <p className="mt-1 text-sm leading-7 text-muted-foreground">{item}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-[1fr_1.08fr]">
+        <div className="grid items-start gap-6 xl:grid-cols-[1fr_1.08fr]">
           <div className="space-y-6">
             <Card className="border-border/60 bg-card/90">
               <CardHeader>
@@ -168,17 +233,17 @@ export function ResumeReview({ profile, projects, capabilityScores, report }: Re
             </div>
           </div>
 
-          <Card className="flex h-full flex-col border-border/60 bg-card/95 shadow-lg shadow-primary/5">
+          <Card className="border-border/60 bg-card/95 shadow-lg shadow-primary/5 xl:sticky xl:top-24">
             <CardHeader className="space-y-3">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <PencilRuler className="h-5 w-5 text-primary" />
                 建议补充内容
               </CardTitle>
               <p className="text-sm leading-7 text-muted-foreground">
-                这一栏优先给你可直接动手改的内容，尽量把每一条都改成能落到简历里的真实材料。
+                这一栏优先给你可直接动手修改的内容，尽量把每一条都落到简历里的真实材料上，而不是停留在泛泛描述。
               </p>
             </CardHeader>
-            <CardContent className="flex h-full flex-col gap-4">
+            <CardContent className="space-y-4">
               {suggestions.length > 0 ? (
                 suggestions.map((item, index) => (
                   <div key={`suggestion-${index}`} className="rounded-3xl border border-primary/15 bg-primary/5 p-4">
@@ -200,18 +265,8 @@ export function ResumeReview({ profile, projects, capabilityScores, report }: Re
                   如果你准备继续优化简历，可以回到上传与分析区，重新调整目标岗位和补充说明，再生成一版更贴近目标岗位的新报告。
                 </p>
                 <Button type="button" className="mt-4 rounded-full" onClick={handleOptimize}>
-                  一键优化简历
+                  返回上传区继续优化
                 </Button>
-              </div>
-              <div className="mt-auto rounded-3xl border border-border/60 bg-background/80 p-5">
-                <div className="grid gap-4 md:grid-cols-3">
-                  {priorityItems.map((item, index) => (
-                    <div key={`priority-${index}`} className="rounded-2xl border border-border/60 bg-secondary/10 p-4">
-                      <p className="text-xs font-medium tracking-[0.18em] text-primary/80">优先项 {index + 1}</p>
-                      <p className="mt-3 text-sm leading-7 text-foreground">{item}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -303,7 +358,7 @@ function buildHighlights(profile: CareerProfileData, projects: ProjectHighlight[
   const items = [...profile.strengths]
 
   if (projects.length > 0) {
-    items.push(`已识别 ${projects.length} 段项目或实践证据，可以继续往量化成果方向深化。`)
+    items.push(`已识别到 ${projects.length} 段项目或实践证据，可以继续往量化结果方向深化。`)
   }
 
   if (profile.certificates.length > 0) {
@@ -334,7 +389,7 @@ function buildGaps(
   }
 
   if (profile.skills.length < 4) {
-    items.push("专业技能展示偏少，建议补充工具、方法和业务场景关键词。")
+    items.push("专业技能展示偏少，建议补充工具、方法、业务场景和协作方式关键词。")
   }
 
   if (report.completionRate < 70) {
@@ -355,7 +410,7 @@ function buildSuggestions(
   if (projects.length === 0) {
     items.push("补充 1-2 段与目标岗位相关的项目、实习或校园实践，写清背景、动作与结果。")
   } else {
-    items.push("把已有项目经历改写成“任务背景-关键动作-量化结果”的结构，增强说服力。")
+    items.push("把已有项目经历改写成“任务背景 - 关键动作 - 量化结果”的结构，增强说服力。")
   }
 
   if (profile.certificates.length === 0) {
@@ -385,7 +440,7 @@ function buildTemplateFields(profile: CareerProfileData, projects: ProjectHighli
   return [
     {
       label: "项目背景",
-      hint: "说明项目服务的业务场景、你所在的团队、你承担的任务，不要只写项目名称。",
+      hint: "说明项目服务的业务场景、你所在的团队和你承担的任务，不要只写项目名称。",
       example: `在 ${scenario} 中，我作为 ${targetRole} 相关负责人之一，负责围绕业务目标推进需求分析与方案落地。`,
     },
     {
@@ -406,9 +461,67 @@ function buildTemplateFields(profile: CareerProfileData, projects: ProjectHighli
     {
       label: "业务价值",
       hint: "说明这段经历对业务、用户或团队带来了什么价值，避免只写执行过程。",
-      example: `这段经历证明我不仅能完成执行任务，还能从业务目标出发，为 ${targetRole} 岗位提供可迁移的项目证据。`,
+      example: `这段经历证明我不仅读能完成执行任务，还能从业务目标出发，为 ${targetRole} 岗位提供可迁移的项目证据。`,
     },
   ]
+}
+
+function buildSkillGroups(skills: string[]): SkillGroup[] {
+  const toolKeywords = ["excel", "word", "ppt", "powerpoint", "photoshop", "cad", "sql", "python", "java", "figma", "axure"]
+  const languageKeywords = ["普通话", "英语", "日语", "粤语", "韩语", "mandarin", "english", "japanese", "cantonese"]
+  const businessKeywords = ["客户服务", "报关", "外贸", "运营", "销售支持", "用户研究", "需求分析", "项目管理"]
+
+  const groups: SkillGroup[] = [
+    { label: "技能", items: [], emptyLabel: "建议补充专业能力关键词" },
+    { label: "工具", items: [], emptyLabel: "建议补充常用工具与软件" },
+    { label: "业务经验", items: [], emptyLabel: "建议补充业务场景与实践经历" },
+    { label: "语言能力", items: [], emptyLabel: "建议补充语言或沟通能力信息" },
+  ]
+
+  skills.forEach((rawSkill) => {
+    const skill = rawSkill.trim()
+    const lowerSkill = skill.toLowerCase()
+
+    if (toolKeywords.some((keyword) => lowerSkill.includes(keyword))) {
+      groups[1].items.push(skill)
+      return
+    }
+
+    if (languageKeywords.some((keyword) => lowerSkill.includes(keyword.toLowerCase()))) {
+      groups[3].items.push(skill)
+      return
+    }
+
+    if (businessKeywords.some((keyword) => skill.includes(keyword))) {
+      groups[2].items.push(skill)
+      return
+    }
+
+    groups[0].items.push(skill)
+  })
+
+  return groups.map((group) => ({ ...group, items: dedupe(group.items) }))
+}
+
+function getPriorityPalette(index: number) {
+  if (index === 0) {
+    return {
+      container: "border-rose-200 bg-rose-50/80",
+      badge: "bg-rose-100 text-rose-600",
+    }
+  }
+
+  if (index === 1) {
+    return {
+      container: "border-amber-200 bg-amber-50/80",
+      badge: "bg-amber-100 text-amber-600",
+    }
+  }
+
+  return {
+    container: "border-sky-200 bg-sky-50/80",
+    badge: "bg-sky-100 text-sky-600",
+  }
 }
 
 function getCompletionStatus(score: number) {
@@ -417,6 +530,7 @@ function getCompletionStatus(score: number) {
       label: "信息较完整",
       className: "bg-emerald-500/15 text-emerald-700",
       barClassName: "bg-emerald-500",
+      summary: "整体信息已经比较完整，接下来重点提升项目结果表达和岗位贴合度。",
     }
   }
 
@@ -425,6 +539,7 @@ function getCompletionStatus(score: number) {
       label: "仍可补强",
       className: "bg-amber-500/15 text-amber-700",
       barClassName: "bg-amber-500",
+      summary: "基础信息已经具备，但项目、成果或技能标签仍有继续补强空间。",
     }
   }
 
@@ -432,6 +547,7 @@ function getCompletionStatus(score: number) {
     label: "需要重点完善",
     className: "bg-rose-500/15 text-rose-700",
     barClassName: "bg-rose-500",
+    summary: "当前简历仍缺少较多关键信息，建议先补齐项目、技能和目标方向表达。",
   }
 }
 

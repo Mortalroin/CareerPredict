@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, MapPin, TrendingUp } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { readJobRecommendationsSnapshot, saveJobDetailSnapshot } from "@/lib/job-detail-storage"
+import { readJobRecommendationsSnapshot, saveDashboardScrollPosition, saveJobDetailSnapshot } from "@/lib/job-detail-storage"
 import type { JobPortraitCard, JobRecommendation, JobRecommendationsSnapshot } from "@/lib/types"
 
 function scoreStyle(score: number) {
@@ -19,6 +20,7 @@ function findPortrait(job: JobRecommendation, portraits: JobPortraitCard[]) {
   const normalizedTitle = job.title.trim().toLowerCase()
 
   return (
+    portraits.find((portrait) => portrait.jobId === job.id) ||
     portraits.find((portrait) => portrait.roleName.trim().toLowerCase() === normalizedTitle) ||
     portraits.find((portrait) => portrait.roleName.includes(job.title) || job.title.includes(portrait.roleName))
   )
@@ -26,6 +28,7 @@ function findPortrait(job: JobRecommendation, portraits: JobPortraitCard[]) {
 
 export function RecommendedJobsPage() {
   const [snapshot, setSnapshot] = useState<JobRecommendationsSnapshot | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     setSnapshot(readJobRecommendationsSnapshot())
@@ -35,14 +38,23 @@ export function RecommendedJobsPage() {
     return snapshot ? [...snapshot.jobs].sort((a, b) => b.matchScore - a.matchScore) : []
   }, [snapshot])
 
+  function handleBack() {
+    if (window.history.length > 1) {
+      router.back()
+      return
+    }
+
+    router.push("/")
+  }
+
   if (!snapshot) {
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
+          <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
             <ArrowLeft className="h-4 w-4" />
             返回首页
-          </Link>
+          </button>
 
           <Card className="mt-6 border-border/60">
             <CardContent className="space-y-4 p-8">
@@ -60,10 +72,10 @@ export function RecommendedJobsPage() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
+            <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80">
               <ArrowLeft className="h-4 w-4" />
               返回推荐结果
-            </Link>
+            </button>
             <p className="mt-4 text-sm font-medium text-primary">推荐岗位扩展列表</p>
             <h1 className="mt-2 text-4xl font-semibold tracking-tight">更多推荐岗位</h1>
             <p className="mt-3 max-w-3xl text-lg leading-8 text-muted-foreground">
@@ -71,9 +83,7 @@ export function RecommendedJobsPage() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-border/60 bg-card/90 px-5 py-4 text-sm text-muted-foreground">
-            共 {sortedJobs.length} 个推荐岗位
-          </div>
+          <div className="rounded-3xl border border-border/60 bg-card/90 px-5 py-4 text-sm text-muted-foreground">共 {sortedJobs.length} 个推荐岗位</div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -89,9 +99,7 @@ export function RecommendedJobsPage() {
                       <CardTitle className="text-2xl">{job.title}</CardTitle>
                       <p className="text-sm text-muted-foreground">{job.company}</p>
                     </div>
-                    <div className={`rounded-full px-3 py-1 text-sm font-medium ${scoreStyle(job.matchScore)}`}>
-                      匹配度 {job.matchScore}%
-                    </div>
+                    <div className={`rounded-full px-3 py-1 text-sm font-medium ${scoreStyle(job.matchScore)}`}>匹配度 {job.matchScore}%</div>
                   </div>
                   <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
@@ -124,14 +132,15 @@ export function RecommendedJobsPage() {
 
                   <Link
                     href={`/jobs/${job.id}`}
-                    onClick={() =>
+                    onClick={() => {
+                      saveDashboardScrollPosition(window.scrollY)
                       saveJobDetailSnapshot({
                         job,
                         portrait,
                         reportTitle: snapshot.reportTitle,
                         candidateName: snapshot.candidateName,
                       })
-                    }
+                    }}
                     className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-80"
                   >
                     查看岗位详情

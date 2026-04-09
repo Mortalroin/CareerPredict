@@ -15,6 +15,7 @@ import { ResumeReview } from "@/components/resume-review"
 import { ResumeUpload } from "@/components/resume-upload"
 import { TransitionPaths } from "@/components/transition-paths"
 import { analyzeResume, checkBackendHealth } from "@/lib/api"
+import { readDashboardScrollPosition, readDashboardSnapshot, saveDashboardSnapshot } from "@/lib/job-detail-storage"
 import { mockCareerAnalysis } from "@/lib/mock-data"
 import type { CareerAnalysisResponse } from "@/lib/types"
 
@@ -31,6 +32,21 @@ export function CareerDashboard() {
 
   useEffect(() => {
     let active = true
+    const cached = readDashboardSnapshot()
+    const cachedScroll = readDashboardScrollPosition()
+
+    if (cached) {
+      setAnalysis(cached.analysis)
+      setTargetRole(cached.targetRole)
+      setNotes(cached.notes)
+      setStatusMessage(cached.statusMessage)
+    }
+
+    if (cachedScroll !== null) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: cachedScroll, behavior: "auto" })
+      })
+    }
 
     void checkBackendHealth().then((healthy) => {
       if (active) {
@@ -43,6 +59,15 @@ export function CareerDashboard() {
     }
   }, [])
 
+  useEffect(() => {
+    saveDashboardSnapshot({
+      analysis,
+      targetRole,
+      notes,
+      statusMessage,
+    })
+  }, [analysis, notes, statusMessage, targetRole])
+
   const reportBadge = useMemo(() => {
     if (backendReady === null) {
       return "检查中"
@@ -51,6 +76,19 @@ export function CareerDashboard() {
     return backendReady ? "后端已连接" : "演示模式"
   }, [backendReady])
 
+  function scrollToAnalysisContent() {
+    if (typeof document === "undefined") {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      document.getElementById("resume-review")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    })
+  }
+
   async function handleAnalyze() {
     if (!file) {
       setStatusMessage("请先上传 PDF、DOC 或 DOCX 简历，再开始分析。")
@@ -58,12 +96,13 @@ export function CareerDashboard() {
     }
 
     setIsSubmitting(true)
-    setStatusMessage("正在解析简历、匹配岗位并刷新职业报告，请稍候…")
+    setStatusMessage("正在解析简历、匹配岗位并刷新职业报告，请稍候。")
 
     try {
       const result = await analyzeResume(file, { targetRole, notes })
       setAnalysis(result)
       setStatusMessage("简历解析与岗位匹配已完成，页面已更新为真实后端数据。")
+      scrollToAnalysisContent()
     } catch (error) {
       const message = error instanceof Error ? error.message : "分析失败，请稍后重试。"
       setStatusMessage(message)
@@ -75,6 +114,7 @@ export function CareerDashboard() {
   function handleLoadDemo() {
     setAnalysis(mockCareerAnalysis)
     setStatusMessage("演示报告已加载，你仍然可以随时上传真实简历重新分析。")
+    scrollToAnalysisContent()
   }
 
   return (

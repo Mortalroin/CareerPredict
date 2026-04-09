@@ -37,6 +37,7 @@ class CapabilityDimensionScore(BaseModel):
 
 
 class JobPortrait(BaseModel):
+    job_id: str = ""
     role_name: str
     role_family: str
     summary: str

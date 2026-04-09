@@ -1,6 +1,7 @@
 "use client"
 
 import type {
+  DashboardSnapshot,
   GrowthDetailSnapshot,
   JobDetailSnapshot,
   JobRecommendationsSnapshot,
@@ -11,6 +12,8 @@ const JOB_PREFIX = "career-job-detail:"
 const JOB_LIST_KEY = "career-job-recommendations"
 const GROWTH_PREFIX = "career-growth-detail:"
 const ROADMAP_PREFIX = "career-roadmap-detail:"
+const DASHBOARD_KEY = "career-dashboard-snapshot"
+const DASHBOARD_SCROLL_KEY = "career-dashboard-scroll"
 
 export function saveJobDetailSnapshot(snapshot: JobDetailSnapshot) {
   if (typeof window === "undefined") {
@@ -110,4 +113,51 @@ export function readRoadmapDetailSnapshot(stepId: string): RoadmapDetailSnapshot
   } catch {
     return null
   }
+}
+
+export function saveDashboardSnapshot(snapshot: DashboardSnapshot) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  window.sessionStorage.setItem(DASHBOARD_KEY, JSON.stringify(snapshot))
+}
+
+export function readDashboardSnapshot(): DashboardSnapshot | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+
+  const raw = window.sessionStorage.getItem(DASHBOARD_KEY)
+  if (!raw) {
+    return null
+  }
+
+  try {
+    return JSON.parse(raw) as DashboardSnapshot
+  } catch {
+    return null
+  }
+}
+
+export function saveDashboardScrollPosition(scrollY: number) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  window.sessionStorage.setItem(DASHBOARD_SCROLL_KEY, String(scrollY))
+}
+
+export function readDashboardScrollPosition(): number | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+
+  const raw = window.sessionStorage.getItem(DASHBOARD_SCROLL_KEY)
+  if (!raw) {
+    return null
+  }
+
+  const parsed = Number.parseInt(raw, 10)
+  return Number.isFinite(parsed) ? parsed : null
 }
