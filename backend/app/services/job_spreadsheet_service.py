@@ -4,15 +4,21 @@ import re
 from collections import OrderedDict
 from io import BytesIO
 from typing import Any
+from zipfile import BadZipFile
 
 from openpyxl import load_workbook
+from openpyxl.utils.exceptions import InvalidFileException
 
 from app.schemas.job import JobImportItem
 
 
 class JobSpreadsheetService:
     def parse_excel(self, file_bytes: bytes) -> list[JobImportItem]:
-        workbook = load_workbook(filename=BytesIO(file_bytes), read_only=True, data_only=True)
+        try:
+            workbook = load_workbook(filename=BytesIO(file_bytes), read_only=True, data_only=True)
+        except (BadZipFile, InvalidFileException, OSError, ValueError) as exc:
+            raise ValueError("Invalid Excel file. Please upload a valid .xlsx workbook.") from exc
+
         worksheet = workbook.active
         rows = list(worksheet.iter_rows(values_only=True))
         if not rows:

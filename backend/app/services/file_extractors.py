@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import BadZipFile, ZipFile
 
 from xml.etree import ElementTree
 
@@ -38,13 +38,19 @@ class FileExtractorService:
 
     @staticmethod
     def _extract_docx(file_bytes: bytes) -> str:
-        with ZipFile(BytesIO(file_bytes)) as archive:
-            try:
-                document_xml = archive.read("word/document.xml")
-            except KeyError as exc:
-                raise ValueError("DOCX file is missing word/document.xml.") from exc
+        try:
+            with ZipFile(BytesIO(file_bytes)) as archive:
+                try:
+                    document_xml = archive.read("word/document.xml")
+                except KeyError as exc:
+                    raise ValueError("DOCX file is missing word/document.xml.") from exc
 
-        root = ElementTree.fromstring(document_xml)
+            root = ElementTree.fromstring(document_xml)
+        except BadZipFile as exc:
+            raise ValueError("Invalid DOCX file.") from exc
+        except ElementTree.ParseError as exc:
+            raise ValueError("DOCX content could not be parsed.") from exc
+
         namespaces = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
         text_nodes = root.findall(".//w:t", namespaces)
         text_parts = [node.text.strip() for node in text_nodes if node.text and node.text.strip()]
@@ -57,8 +63,12 @@ class FileExtractorService:
         except ImportError as exc:
             raise ValueError("PDF parsing requires pypdf. Please install backend requirements.") from exc
 
-        reader = PdfReader(BytesIO(file_bytes))
-        pages = [page.extract_text() or "" for page in reader.pages]
+        try:
+            reader = PdfReader(BytesIO(file_bytes))
+            pages = [page.extract_text() or "" for page in reader.pages]
+        except Exception as exc:
+            raise ValueError("Invalid PDF file.") from exc
+
         text = "\n".join(page.strip() for page in pages if page.strip())
         if not text:
             raise ValueError("No readable text was extracted from the PDF.")

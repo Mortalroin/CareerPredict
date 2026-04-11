@@ -25,11 +25,17 @@ async def match_resume_to_jobs(
             detail="Uploaded file must have a filename.",
         )
 
-    resume_data = await resume_parser_service.parse_resume(
-        upload=file,
-        target_role=target_role,
-        city=city,
-        notes=notes,
-    )
-    resume_store_service.save_resume(resume_data)
-    return match_service.match_resume(resume_data=resume_data, limit=limit)
+    try:
+        resume_data = await resume_parser_service.parse_resume(
+            upload=file,
+            target_role=target_role,
+            city=city,
+            notes=notes,
+        )
+        resume_store_service.save_resume(resume_data)
+        return match_service.match_resume(resume_data=resume_data, limit=limit)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
