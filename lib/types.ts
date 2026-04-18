@@ -1,6 +1,15 @@
 export interface AnalysisRequestPayload {
   targetRole: string
   notes: string
+  resumeId?: string
+}
+
+export interface ResumeOptimizationSavePayload {
+  resumeId: string
+  targetRole: string
+  notes: string
+  optimizationDrafts: ResumeOptimizationDraft
+  mergedNotes: string
 }
 
 export interface BackendMatchBreakdown {
@@ -78,6 +87,7 @@ export interface BackendActionPlanPhase {
 
 export interface BackendResumeMatchResponse {
   structured_resume: {
+    resume_id: string
     basics: {
       name: string
       current_city: string
@@ -273,6 +283,7 @@ export interface ReportSummary {
 }
 
 export interface CareerAnalysisResponse {
+  resumeId?: string
   profile: CareerProfileData
   projects: ProjectHighlight[]
   capabilityScores: CapabilityScoreCard[]
@@ -293,6 +304,7 @@ export interface CareerAnalysisResponse {
 
 export interface DashboardSnapshot {
   analysis: CareerAnalysisResponse
+  resumeId?: string
   targetRole: string
   notes: string
   statusMessage: string

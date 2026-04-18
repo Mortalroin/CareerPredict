@@ -42,7 +42,7 @@ export function CareerProfile({ profile, jobs }: CareerProfileProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 max-w-4xl">
           <p className="text-sm font-medium text-primary">目标岗位画像</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">目标岗位：{primaryRole} 就业能力画像</h2>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">{primaryRole} 就业能力画像</h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">{profile.summary}</p>
         </div>
 
@@ -101,7 +101,7 @@ export function CareerProfile({ profile, jobs }: CareerProfileProps) {
                   </div>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
                     {index === 0
-                      ? "建议优先围绕这个方向继续优化简历、项目表达和投递话术。"
+                      ? "建议优先围绕这个方向继续优化简历、项目表达和投递策略。"
                       : "可以作为相近发展方向同步准备，提升后续匹配机会。"}
                   </p>
                 </div>

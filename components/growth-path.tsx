@@ -37,7 +37,7 @@ export function GrowthPath({
               <p className="text-sm font-medium text-primary">成长阶段</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight">清晰查看未来职业成长路径</h2>
               <p className="mt-4 text-lg leading-8 text-muted-foreground">
-                这里会把你的当前阶段、下一步目标以及中长期成长节点拆开展示。点击任一阶段后，可以继续查看“通向下一阶段需要学什么、补什么、做什么”。
+                这里会把你的当前阶段、下一步目标以及中长期成长节点拆开展示。点进任一阶段后，可以继续查看“通往下一阶段需要学什么、补什么、做什么”。
               </p>
             </div>
 

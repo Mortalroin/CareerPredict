@@ -50,6 +50,7 @@ class ResumeParserService:
         target_role: str = "",
         city: str = "",
         notes: str = "",
+        resume_id: str = "",
     ) -> ResumeParseResponse:
         await self._validate_file(upload)
 
@@ -65,6 +66,7 @@ class ResumeParserService:
         hard_conditions = self._build_hard_conditions(profile)
         soft_conditions = self._build_soft_conditions(profile, embedding_text)
         structured_resume = self._build_structured_resume(
+            resume_id=resume_id,
             filename=upload.filename or "unknown",
             content_type=upload.content_type or "application/octet-stream",
             extracted_text=extracted_text,
@@ -274,6 +276,7 @@ class ResumeParserService:
 
     def _build_structured_resume(
         self,
+        resume_id: str,
         filename: str,
         content_type: str,
         extracted_text: str,
@@ -310,7 +313,7 @@ class ResumeParserService:
             )
 
         return StructuredResume(
-            resume_id=f"resume_{uuid4().hex[:12]}",
+            resume_id=resume_id or f"resume_{uuid4().hex[:12]}",
             source_filename=filename,
             content_type=content_type,
             raw_text=extracted_text,

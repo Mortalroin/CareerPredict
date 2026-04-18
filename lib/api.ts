@@ -8,6 +8,7 @@ import type {
   GrowthStage,
   JobRecommendation,
   ProjectHighlight,
+  ResumeOptimizationSavePayload,
   RoadmapStep,
 } from "@/lib/types"
 
@@ -41,6 +42,15 @@ function dedupeList(items: string[]): string[] {
   return Array.from(new Set(items.map((item) => cleanText(item)).filter(Boolean)))
 }
 
+function looksCorruptedText(value: string): boolean {
+  if (!value) {
+    return false
+  }
+
+  const suspiciousTokens = ["鍚", "鐩", "绠", "鏈", "宸", "闃", "鍩", "璇", "寤", "鏆"]
+  return suspiciousTokens.filter((token) => value.includes(token)).length >= 2
+}
+
 function formatDegreeLabel(value: string): string {
   const mapping: Record<string, string> = {
     bachelor: "本科",
@@ -57,7 +67,7 @@ function formatDegreeLabel(value: string): string {
 function formatDimensionLabel(value: string): string {
   const mapping: Record<string, string> = {
     basic_requirements: "基础要求",
-    professional_skills: "职业技能",
+    professional_skills: "专业技能",
     professional_literacy: "职业素养",
     growth_potential: "发展潜力",
   }
@@ -148,7 +158,7 @@ function normalizeProfileSummary(
   skills: string[],
 ): string {
   const cleaned = cleanText(summary)
-  if (cleaned && hasChinese(cleaned) && !looksEnglishHeavy(cleaned)) {
+  if (cleaned && hasChinese(cleaned) && !looksEnglishHeavy(cleaned) && !looksCorruptedText(cleaned)) {
     return cleaned
   }
 
@@ -158,13 +168,13 @@ function normalizeProfileSummary(
 
 function formatCapabilitySummary(dimension: string, summary: string): string {
   const cleaned = cleanText(summary)
-  if (cleaned && hasChinese(cleaned) && !looksEnglishHeavy(cleaned)) {
+  if (cleaned && hasChinese(cleaned) && !looksEnglishHeavy(cleaned) && !looksCorruptedText(cleaned)) {
     return cleaned
   }
 
   const fallback: Record<string, string> = {
     基础要求: "主要评估候选人在学历、经验、城市及语言等基础门槛上的满足程度。",
-    职业技能: "主要对比简历中提取的技能、工具与岗位显性要求之间的契合程度。",
+    专业技能: "主要对比简历中提取出的技能、工具与岗位显性要求之间的契合程度。",
     职业素养: "结合语言表达、协作信号与经历内容，评估沟通、协作和抗压等职业素养。",
     发展潜力: "结合项目经历、技能广度和可迁移性，评估候选人的后续成长空间。",
   }
@@ -249,7 +259,7 @@ function buildRoadmap(targetRole: string): RoadmapStep[] {
     {
       id: 1,
       title: "完成简历解析",
-      subtitle: "建立学生能力画像",
+      subtitle: "建立候选人能力画像",
       description: "系统已将上传简历拆解为基础要求、技能标签与发展潜力信息。",
       timeframe: "当前",
       status: "done",
@@ -394,7 +404,7 @@ function buildPortraitSummary(roleName: string, roleFamily: string, skills: stri
 
 function normalizePortraitSummary(summary: string, roleName: string, roleFamily: string, skills: string[]): string {
   const cleaned = cleanText(summary)
-  if (!cleaned || looksEnglishHeavy(cleaned)) {
+  if (!cleaned || looksEnglishHeavy(cleaned) || looksCorruptedText(cleaned)) {
     return buildPortraitSummary(roleName, roleFamily, skills)
   }
 
@@ -440,7 +450,9 @@ function normalizeRequirementItems(
   roleName: string,
   skills: string[],
 ): string[] {
-  const cleaned = dedupeList(items).filter((item) => item.length >= 6 && hasChinese(item) && !looksEnglishHeavy(item))
+  const cleaned = dedupeList(items).filter(
+    (item) => item.length >= 6 && hasChinese(item) && !looksEnglishHeavy(item) && !looksCorruptedText(item),
+  )
   if (cleaned.length > 0) {
     return cleaned.slice(0, 3)
   }
@@ -464,7 +476,7 @@ function normalizeCertificate(value: string): string {
 
 function normalizeTransitionReason(sourceRole: string, targetRole: string, reason: string, bridgeSkills: string[]): string {
   const cleaned = cleanText(reason)
-  if (!cleaned || looksEnglishHeavy(cleaned)) {
+  if (!cleaned || looksEnglishHeavy(cleaned) || looksCorruptedText(cleaned)) {
     const skills = bridgeSkills.slice(0, 3).join("、") || "已有通用能力"
     return `${sourceRole} 与 ${targetRole} 在 ${skills} 等方面具备可迁移基础，通过补足少量岗位专项能力后，可以形成较自然的转岗路径。`
   }
@@ -473,7 +485,9 @@ function normalizeTransitionReason(sourceRole: string, targetRole: string, reaso
 }
 
 function normalizeTransitionActions(targetRole: string, actions: string[], bridgeSkills: string[]): string[] {
-  const cleaned = dedupeList(actions).filter((item) => item.length >= 6 && hasChinese(item) && !looksEnglishHeavy(item))
+  const cleaned = dedupeList(actions).filter(
+    (item) => item.length >= 6 && hasChinese(item) && !looksEnglishHeavy(item) && !looksCorruptedText(item),
+  )
   if (cleaned.length > 0) {
     return cleaned.slice(0, 3)
   }
@@ -488,7 +502,7 @@ function normalizeTransitionActions(targetRole: string, actions: string[], bridg
 
 function normalizeReportOverview(overview: string, targetRole: string): string {
   const cleaned = cleanText(overview)
-  if (cleaned && hasChinese(cleaned) && !looksEnglishHeavy(cleaned)) {
+  if (cleaned && hasChinese(cleaned) && !looksEnglishHeavy(cleaned) && !looksCorruptedText(cleaned)) {
     return cleaned
   }
 
@@ -497,11 +511,11 @@ function normalizeReportOverview(overview: string, targetRole: string): string {
 
 function normalizePathPlan(pathPlan: string, targetRole: string): string {
   const cleaned = cleanText(pathPlan)
-  if (cleaned && hasChinese(cleaned) && !looksEnglishHeavy(cleaned)) {
+  if (cleaned && hasChinese(cleaned) && !looksEnglishHeavy(cleaned) && !looksCorruptedText(cleaned)) {
     return cleaned
   }
 
-  return `建议围绕 ${targetRole} 制定分阶段成长路径：先补足关键技能与项目案例，再逐步增强岗位表达、投递策略与面试说服力。`
+  return `建议围绕 ${targetRole} 制定分阶段成长路线：先补足关键技能与项目案例，再逐步增强岗位表达、投递策略与面试说服力。`
 }
 
 function mapBackendResponse(
@@ -555,6 +569,7 @@ function mapBackendResponse(
   ]
 
   return {
+    resumeId: resume.resume_id,
     profile: {
       name: profileName,
       headline: `${targetRole} 就业能力画像`,
@@ -686,6 +701,10 @@ function buildResumeFormData(
   formData.append("target_role", payload.targetRole)
   formData.append("notes", payload.notes)
 
+  if (payload.resumeId) {
+    formData.append("resume_id", payload.resumeId)
+  }
+
   if (options?.includeLimit) {
     formData.append("limit", "8")
   }
@@ -697,12 +716,6 @@ export async function analyzeResume(
   file: File,
   payload: AnalysisRequestPayload,
 ): Promise<CareerAnalysisResponse> {
-  const parseResponse = await fetch(`${API_BASE_URL}/api/v1/resume/parse`, {
-    method: "POST",
-    body: buildResumeFormData(file, payload),
-  })
-  await parseJson<unknown>(parseResponse)
-
   const matchResponse = await fetch(`${API_BASE_URL}/api/v1/match/resume-to-jobs`, {
     method: "POST",
     body: buildResumeFormData(file, payload, { includeLimit: true }),
@@ -722,4 +735,21 @@ export async function checkBackendHealth(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+export async function saveResumeOptimization(payload: ResumeOptimizationSavePayload): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/resumes/${payload.resumeId}/optimization`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      target_role: payload.targetRole,
+      notes: payload.notes,
+      optimization_drafts: payload.optimizationDrafts,
+      merged_notes: payload.mergedNotes,
+    }),
+  })
+
+  await parseJson<unknown>(response)
 }

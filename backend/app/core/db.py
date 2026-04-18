@@ -50,3 +50,16 @@ def init_db() -> None:
             )
             """
         )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS resume_optimizations (
+                resume_id TEXT PRIMARY KEY,
+                target_role TEXT NOT NULL DEFAULT '',
+                notes TEXT NOT NULL DEFAULT '',
+                optimization_json TEXT NOT NULL DEFAULT '{}',
+                merged_notes TEXT NOT NULL DEFAULT '',
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (resume_id) REFERENCES resumes (resume_id) ON DELETE CASCADE
+            )
+            """
+        )

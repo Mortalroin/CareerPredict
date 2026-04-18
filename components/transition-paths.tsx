@@ -53,9 +53,7 @@ export function TransitionPaths({ paths, portraits }: TransitionPathsProps) {
     }
   }, [activeGroup, activeTarget])
 
-  const activePath =
-    activeGroup?.paths.find((path) => path.targetRole === activeTarget) ??
-    activeGroup?.paths[0]
+  const activePath = activeGroup?.paths.find((path) => path.targetRole === activeTarget) ?? activeGroup?.paths[0]
 
   const portraitLookup = useMemo(() => {
     const lookup = new Map<string, JobPortraitCard>()
@@ -69,6 +67,11 @@ export function TransitionPaths({ paths, portraits }: TransitionPathsProps) {
     ? portraitLookup.get(activePath.targetRole) ?? buildFallbackBridgePortrait(activePath)
     : undefined
 
+  function handleSourceSelect(sourceRole: string, targetRole: string) {
+    setActiveSource(sourceRole)
+    setActiveTarget(targetRole)
+  }
+
   return (
     <section className="py-14 lg:py-20" id="transition-paths">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -76,7 +79,7 @@ export function TransitionPaths({ paths, portraits }: TransitionPathsProps) {
           <p className="text-sm font-medium text-primary">转岗路径图谱</p>
           <h2 className="mt-3 text-[2rem] font-semibold tracking-tight">可迁移岗位与岗位桥接</h2>
           <p className="mt-4 text-base leading-7 text-muted-foreground">
-            这里把多个岗位之间的可迁移关系整理成岗位桥接图。你可以先选择一个源岗位，再查看它延展出去的分支岗位，以及每条路径背后的桥接技能和行动建议。
+            这里把多个岗位之间的可迁移关系整理成岗位桥接图。你可以先选一个来源岗位，再查看它能延展出的目标岗位，以及每条路径背后的桥接技能和行动建议。
           </p>
         </div>
 
@@ -88,26 +91,33 @@ export function TransitionPaths({ paths, portraits }: TransitionPathsProps) {
                 岗位关系图谱
               </div>
               <div className="rounded-3xl border border-border/60 bg-secondary/20 p-4 text-sm leading-6 text-muted-foreground">
-                当前展示的是“源岗位 - 可转向岗位”的图谱关系。你可以先选左侧源岗位，再切换分支岗位，查看为什么这条路径成立，以及具体要补哪些桥接能力。
+                当前展示的是“来源岗位 - 可转向岗位”的关系图。你可以先选左侧来源岗位，再切换分支岗位，查看为什么这条路径成立，以及具体要补哪些桥接能力。
               </div>
             </CardHeader>
 
             <CardContent className="space-y-5 xl:max-h-[calc(100vh-15rem)] xl:overflow-y-auto xl:pr-2">
               {groups.map((group) => {
                 const selected = group.sourceRole === activeSource
-                const selectedPath =
-                  group.paths.find((path) => path.targetRole === activeTarget) ??
-                  group.paths[0]
+                const selectedPath = group.paths.find((path) => path.targetRole === activeTarget) ?? group.paths[0]
 
                 return (
-                  <button
+                  <div
                     key={group.sourceRole}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selected}
                     onClick={() => {
-                      setActiveSource(group.sourceRole)
-                      setActiveTarget(group.paths[0]?.targetRole ?? "")
+                      handleSourceSelect(group.sourceRole, group.paths[0]?.targetRole ?? "")
                     }}
-                    className={`w-full rounded-[32px] border p-5 text-left transition ${
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") {
+                        return
+                      }
+
+                      event.preventDefault()
+                      handleSourceSelect(group.sourceRole, group.paths[0]?.targetRole ?? "")
+                    }}
+                    className={`w-full rounded-[32px] border p-5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                       selected
                         ? "border-primary/35 bg-primary/5 shadow-sm"
                         : "border-border/60 bg-background hover:border-primary/20 hover:bg-secondary/20"
@@ -117,12 +127,12 @@ export function TransitionPaths({ paths, portraits }: TransitionPathsProps) {
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-2">
                           <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                            源岗位
+                            来源岗位
                           </p>
                           <div className="flex flex-wrap items-center gap-3">
                             <h3 className="text-[1.9rem] font-semibold leading-tight">{group.sourceRole}</h3>
                             <span className="rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground">
-                              {group.paths.length} 条可迁移方向
+                              {group.paths.length} 个可迁移方向
                             </span>
                           </div>
                         </div>
@@ -175,7 +185,7 @@ export function TransitionPaths({ paths, portraits }: TransitionPathsProps) {
                                           isActiveTarget ? "text-primary-foreground/80" : "text-muted-foreground"
                                         }`}
                                       >
-                                        分支岗位
+                                        目标岗位
                                       </p>
                                       <p className="mt-2 text-[1.35rem] font-semibold leading-tight">{path.targetRole}</p>
                                     </div>
@@ -223,7 +233,7 @@ export function TransitionPaths({ paths, portraits }: TransitionPathsProps) {
                         </div>
                       ) : null}
                     </div>
-                  </button>
+                  </div>
                 )
               })}
             </CardContent>
@@ -342,9 +352,7 @@ function InfoBlock({ title, items }: { title: string; items: string[] }) {
   )
 }
 
-function buildFallbackBridgePortrait(
-  path: CareerAnalysisResponse["transitionPaths"][number],
-): JobPortraitCard {
+function buildFallbackBridgePortrait(path: CareerAnalysisResponse["transitionPaths"][number]): JobPortraitCard {
   const family = inferRoleFamily(path.targetRole)
   const bridgeSkills = dedupeList(path.bridgeSkills)
 
@@ -361,7 +369,7 @@ function buildFallbackBridgePortrait(
   > = {
     product: {
       roleFamily: "产品",
-      learningRequirements: ["理解平台或产品策略拆解", "补足指标体系和方案设计能力"],
+      learningRequirements: ["理解平台或产品策略拆解逻辑", "补足指标体系和方案设计能力"],
       communicationRequirements: ["能与研发和设计高效协同", "能把复杂需求翻译成业务语言"],
       stressRequirements: ["能在多需求并行中保持判断", "能平衡范围与质量"],
       internshipRequirements: ["优先展示相关项目案例", "最好有量化结果"],
@@ -413,12 +421,7 @@ function buildFallbackBridgePortrait(
 function inferRoleFamily(title: string): string {
   const lower = title.toLowerCase()
 
-  if (
-    lower.includes("product") ||
-    title.includes("产品") ||
-    title.includes("平台") ||
-    title.includes("增长")
-  ) {
+  if (lower.includes("product") || title.includes("产品") || title.includes("平台") || title.includes("增长")) {
     return "product"
   }
 

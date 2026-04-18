@@ -51,7 +51,7 @@ export function CareerRoadmap({
           <p className="text-sm font-medium text-primary">职业路径规划</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">从当前能力到目标岗位的清晰路线</h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            你可以自由切换当前所处阶段，查看每一阶段的任务建议、能力差距和下一步行动。点击详情后，还能继续拆解为可执行任务。
+            你可以自由切换当前所处阶段，查看每一阶段的任务建议、能力差距和下一步行动。点进详情后，还能继续拆解成更具体的执行任务。
           </p>
         </div>
 
@@ -196,7 +196,7 @@ function buildSuggestedTasks(step?: RoadmapStep): RoadmapTask[] {
 
   if (title.includes("目标") || title.includes("定位")) {
     return [
-      { id: `${step.id}-compare-jobs`, title: "对比目标岗位", description: "从推荐岗位中挑选 3 个最想投递的岗位进行对比。" },
+      { id: `${step.id}-compare-jobs`, title: "对比目标岗位", description: "从推荐岗位中挑选 3 个最想投递的岗位做对比。" },
       { id: `${step.id}-job-portrait`, title: "查看岗位画像", description: "重点阅读目标岗位的技能、实践和证书要求。" },
       { id: `${step.id}-self-positioning`, title: "明确当前定位", description: "判断自己更适合应届、初级还是转岗路径。" },
     ]

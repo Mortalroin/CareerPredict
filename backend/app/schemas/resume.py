@@ -161,3 +161,15 @@ class ResumeParseResponse(BaseModel):
     soft_conditions: ResumeSoftConditions
     vectorization_payload: ResumeVectorizationPayload
     embedding_text: str
+
+
+class ResumeOptimizationPayload(BaseModel):
+    target_role: str = ""
+    notes: str = ""
+    optimization_drafts: dict[str, str] = Field(default_factory=dict)
+    merged_notes: str = ""
+
+
+class ResumeOptimizationRecord(ResumeOptimizationPayload):
+    resume_id: str
+    updated_at: str = ""
