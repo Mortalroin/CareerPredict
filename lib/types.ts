@@ -153,6 +153,17 @@ export interface CareerProfileData {
   suggestedDirection: string
 }
 
+export interface ResumeOptimizationField {
+  key: string
+  label: string
+  hint: string
+  example: string
+}
+
+export type ResumeOptimizationDraft = Record<string, string>
+
+export type ResumeUploadMode = "default" | "optimize"
+
 export interface JobRecommendation {
   id: string
   title: string
@@ -285,6 +296,8 @@ export interface DashboardSnapshot {
   targetRole: string
   notes: string
   statusMessage: string
+  uploadMode?: ResumeUploadMode
+  optimizationDrafts?: ResumeOptimizationDraft
 }
 
 export interface JobDetailSnapshot {
