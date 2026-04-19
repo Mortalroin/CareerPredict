@@ -29,6 +29,13 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
     router.push("/")
   }
 
+  const displayPortrait = useMemo(() => {
+    if (!snapshot) return null
+
+    const { job, portrait } = snapshot
+    return portrait ?? buildFallbackPortrait(job.title, job.tags, job.reason)
+  }, [snapshot])
+
   if (!snapshot) {
     return (
       <main className="min-h-screen bg-background">
@@ -58,11 +65,11 @@ export function JobDetailPage({ jobId }: JobDetailPageProps) {
     )
   }
 
-  const { job, portrait, reportTitle, candidateName } = snapshot
-  const displayPortrait = useMemo(
-    () => portrait ?? buildFallbackPortrait(job.title, job.tags, job.reason),
-    [job.reason, job.tags, job.title, portrait],
-  )
+  if (!displayPortrait) {
+    return null
+  }
+
+  const { job, reportTitle, candidateName } = snapshot
 
   return (
     <main className="min-h-screen bg-secondary/20">

@@ -27,6 +27,9 @@ interface LearningTask {
   detail: string
 }
 
+const RADAR_CENTER = 150
+const RADAR_RADIUS = 70
+
 function translateDimensionLabel(label: string) {
   const normalized = label.trim()
 
@@ -38,7 +41,7 @@ function translateDimensionLabel(label: string) {
   return normalized
 }
 
-function buildRadarPoints(values: number[], radius: number, center = 110) {
+function buildRadarPoints(values: number[], radius: number, center = RADAR_CENTER) {
   const total = values.length
 
   return values
@@ -53,11 +56,11 @@ function buildRadarPoints(values: number[], radius: number, center = 110) {
     .join(" ")
 }
 
-function buildAxisLabels(dimensions: string[], radius: number, center = 110) {
+function buildAxisLabels(dimensions: string[], radius: number, center = RADAR_CENTER) {
   return dimensions.map((dimension, index) => {
     const angle = (Math.PI * 2 * index) / dimensions.length - Math.PI / 2
-    const x = center + Math.cos(angle) * (radius + 24)
-    const y = center + Math.sin(angle) * (radius + 24)
+    const x = center + Math.cos(angle) * (radius + 34)
+    const y = center + Math.sin(angle) * (radius + 34)
 
     return {
       dimension,
@@ -183,7 +186,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
   const translatedDimensions = capabilityScores.map((item) => translateDimensionLabel(item.dimension))
   const currentRadar = capabilityScores.map((item) => item.score)
   const targetRadar = capabilityScores.map((item) => Math.min(95, Math.max(item.score + 12, 75)))
-  const radarLabels = buildAxisLabels(translatedDimensions, 70)
+  const radarLabels = buildAxisLabels(translatedDimensions, RADAR_RADIUS)
   const stageNodes = [selectedStage.role, nextStage?.role, targetRole].filter(
     (value, index, array): value is string => Boolean(value) && array.indexOf(value) === index,
   )
@@ -289,7 +292,7 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
                 <div className="rounded-[28px] border border-primary/10 bg-slate-50/90 p-5">
                   <p className="text-center text-sm font-medium text-slate-600">能力结构</p>
                   <div className="mt-4 flex justify-center">
-                    <svg viewBox="0 0 220 220" className="h-[240px] w-[240px]">
+                    <svg viewBox="0 0 300 300" className="h-[260px] w-full max-w-[340px]" aria-label="能力结构图">
                       {[25, 40, 55, 70].map((radius) => (
                         <polygon
                           key={radius}
@@ -302,20 +305,30 @@ export function GrowthDetailPage({ stageId }: GrowthDetailPageProps) {
 
                       {translatedDimensions.map((_, index) => {
                         const angle = (Math.PI * 2 * index) / translatedDimensions.length - Math.PI / 2
-                        const x = 110 + Math.cos(angle) * 70
-                        const y = 110 + Math.sin(angle) * 70
-                        return <line key={`axis-${index}`} x1="110" y1="110" x2={x} y2={y} stroke="#dbe5f1" strokeWidth="1" />
+                        const x = RADAR_CENTER + Math.cos(angle) * RADAR_RADIUS
+                        const y = RADAR_CENTER + Math.sin(angle) * RADAR_RADIUS
+                        return (
+                          <line
+                            key={`axis-${index}`}
+                            x1={RADAR_CENTER}
+                            y1={RADAR_CENTER}
+                            x2={x}
+                            y2={y}
+                            stroke="#dbe5f1"
+                            strokeWidth="1"
+                          />
+                        )
                       })}
 
                       <polygon
-                        points={buildRadarPoints(targetRadar, 70)}
+                        points={buildRadarPoints(targetRadar, RADAR_RADIUS)}
                         fill="none"
                         stroke="#94a3b8"
                         strokeDasharray="4 4"
                         strokeWidth="2"
                       />
                       <polygon
-                        points={buildRadarPoints(currentRadar, 70)}
+                        points={buildRadarPoints(currentRadar, RADAR_RADIUS)}
                         fill="rgba(245, 158, 11, 0.38)"
                         stroke="#f59e0b"
                         strokeWidth="2"
