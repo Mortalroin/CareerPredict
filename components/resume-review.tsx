@@ -6,7 +6,6 @@ import {
   FileBadge2,
   FolderKanban,
   PencilRuler,
-  ScrollText,
   Sparkles,
 } from "lucide-react"
 
@@ -276,26 +275,6 @@ export function ResumeReview({
           </Card>
         </div>
 
-        <Card className="border-border/60 bg-card/90">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <ScrollText className="h-5 w-5 text-primary" />
-              建议补充到简历里的具体字段模板
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {templateFields.map((field) => (
-              <div key={field.key} className="rounded-3xl border border-border/60 bg-secondary/20 p-5">
-                <p className="text-base font-semibold">{field.label}</p>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">{field.hint}</p>
-                <div className="mt-4 rounded-2xl bg-background px-4 py-3 text-sm leading-7 text-foreground">
-                  <span className="font-medium text-primary">示例：</span>
-                  {field.example}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </div>
     </section>
   )

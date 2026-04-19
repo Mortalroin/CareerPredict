@@ -179,38 +179,44 @@ export function ResumeUpload({
               ) : null}
 
               <div className="space-y-4">
-                {optimizationFields.map((field) => {
-                  const isFilled = Boolean(optimizationDrafts[field.key]?.trim())
+                {optimizationFields.length > 0 ? (
+                  optimizationFields.map((field) => {
+                    const isFilled = Boolean(optimizationDrafts[field.key]?.trim())
 
-                  return (
-                    <div key={field.key} className="rounded-3xl border border-border/60 bg-secondary/15 p-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-base font-semibold">{field.label}</p>
-                        <span
-                          className={`rounded-full bg-background px-3 py-1 text-xs font-medium ${
-                            isFilled ? "text-emerald-600" : "text-amber-500"
-                          }`}
-                        >
-                          {isFilled ? "已填写" : "待补充"}
-                        </span>
+                    return (
+                      <div key={field.key} className="rounded-3xl border border-border/60 bg-secondary/15 p-5">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-base font-semibold">{field.label}</p>
+                          <span
+                            className={`rounded-full bg-background px-3 py-1 text-xs font-medium ${
+                              isFilled ? "text-emerald-600" : "text-amber-500"
+                            }`}
+                          >
+                            {isFilled ? "已填写" : "待补充"}
+                          </span>
+                        </div>
+                        <p className="mt-3 text-sm leading-7 text-muted-foreground">{field.hint}</p>
+                        <div className="mt-4 whitespace-pre-line rounded-2xl border border-border/60 bg-background px-4 py-3 text-sm leading-7 text-foreground">
+                          <span className="font-medium text-primary">已有内容：</span>
+                          {field.example}
+                        </div>
+                        <div className="mt-4 space-y-2">
+                          <label className="text-sm font-medium">补充内容</label>
+                          <Textarea
+                            value={optimizationDrafts[field.key] || ""}
+                            onChange={(event) => onOptimizationDraftChange(field.key, event.target.value)}
+                            placeholder={`请结合你的真实经历补充“${field.label}”`}
+                            className="min-h-28 bg-background"
+                          />
+                        </div>
                       </div>
-                      <p className="mt-3 text-sm leading-7 text-muted-foreground">{field.hint}</p>
-                      <div className="mt-4 rounded-2xl border border-border/60 bg-background px-4 py-3 text-sm leading-7 text-foreground">
-                        <span className="font-medium text-primary">模板示例：</span>
-                        {field.example}
-                      </div>
-                      <div className="mt-4 space-y-2">
-                        <label className="text-sm font-medium">补充内容</label>
-                        <Textarea
-                          value={optimizationDrafts[field.key] || ""}
-                          onChange={(event) => onOptimizationDraftChange(field.key, event.target.value)}
-                          placeholder={`请结合你的真实经历补充“${field.label}”`}
-                          className="min-h-28 bg-background"
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-border/60 bg-secondary/10 p-6 text-sm leading-7 text-muted-foreground">
+                    当前简历中暂未识别到需要重点补充的具体内容。你可以返回上传区补充更完整的简历内容后重新生成报告。
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">

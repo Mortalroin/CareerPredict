@@ -39,8 +39,13 @@ export function CareerDashboard() {
     "当前页面会先展示演示报告数据。上传简历后，系统会调用 FastAPI 进行真实解析、岗位匹配与职业规划生成。",
   )
   const optimizationFields = useMemo(
-    () => buildResumeOptimizationFields(analysis.profile, analysis.projects),
-    [analysis.profile, analysis.projects],
+    () =>
+      buildResumeOptimizationFields(
+        analysis.profile,
+        analysis.projects,
+        analysis.jobPortraits.flatMap((portrait) => portrait.certificates),
+      ),
+    [analysis.jobPortraits, analysis.profile, analysis.projects],
   )
 
   useEffect(() => {

@@ -537,12 +537,13 @@ function mapBackendResponse(
       : resume.derived.role_tags.length > 0
         ? dedupeList(resume.derived.role_tags.map(normalizeTagLabel))
         : ["已完成结构化简历解析", "可继续增强岗位与项目表达"]
-  const certificates = dedupeList([
-    ...resume.skills.certificates,
-    ...response.job_portraits.flatMap((portrait) => portrait.certificates),
-  ])
+  const resumeCertificates = dedupeList(resume.skills.certificates)
     .map(normalizeCertificate)
     .slice(0, 8)
+  const recommendedCertificates = dedupeList([
+    ...resumeCertificates,
+    ...response.job_portraits.flatMap((portrait) => portrait.certificates).map(normalizeCertificate),
+  ]).slice(0, 8)
   const projects = mapProjects(response)
   const jobs: JobRecommendation[] = matches.map((match) => ({
     id: match.job_id,
@@ -592,7 +593,7 @@ function mapBackendResponse(
       ],
       skills: uniqueSkills.length > 0 ? uniqueSkills : ["暂未识别到技能关键词"],
       strengths,
-      certificates,
+      certificates: resumeCertificates,
       suggestedDirection: targetRole,
     },
     projects,
@@ -659,7 +660,7 @@ function mapBackendResponse(
         ...response.capability_scores.slice(0, 2).map(mapCapabilityTrend),
       ],
       skills: mapKnowledgeSkills(response),
-      certifications: certificates,
+      certifications: recommendedCertificates,
     },
     report: {
       completionRate: Math.round(response.career_report.completeness_score),
