@@ -19,7 +19,7 @@ export function KnowledgeInsights({ data }: KnowledgeInsightsProps) {
           <p className="text-sm font-medium text-primary">目标岗位市场分析</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">把市场信息转成下一步可执行动作</h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            这里会汇总目标岗位的岗位样本、招聘趋势、热门技能与推荐学习项，帮助同学更快理解“市场看重什么”“自己下一步该补什么”。
+            这里会汇总目标岗位的岗位样本、招聘趋势、热门技能和推荐学习方向，帮助你更快看清市场重视什么，以及自己下一步最该补什么。
           </p>
         </div>
 

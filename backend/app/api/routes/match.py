@@ -17,6 +17,7 @@ async def match_resume_to_jobs(
     target_role: str = Form(default=""),
     city: str = Form(default=""),
     notes: str = Form(default=""),
+    resume_id: str = Form(default=""),
     limit: int = Form(default=10),
 ) -> ResumeMatchResponse:
     if not file.filename:
@@ -31,6 +32,7 @@ async def match_resume_to_jobs(
             target_role=target_role,
             city=city,
             notes=notes,
+            resume_id=resume_id,
         )
         resume_store_service.save_resume(resume_data)
         return match_service.match_resume(resume_data=resume_data, limit=limit)

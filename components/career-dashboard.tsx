@@ -14,7 +14,7 @@ import { Navbar } from "@/components/navbar"
 import { ResumeReview } from "@/components/resume-review"
 import { ResumeUpload } from "@/components/resume-upload"
 import { TransitionPaths } from "@/components/transition-paths"
-import { analyzeResume, checkBackendHealth } from "@/lib/api"
+import { analyzeResume, checkBackendHealth, saveResumeOptimization } from "@/lib/api"
 import { readDashboardScrollPosition, readDashboardSnapshot, saveDashboardSnapshot } from "@/lib/job-detail-storage"
 import { mockCareerAnalysis } from "@/lib/mock-data"
 import {
@@ -26,12 +26,14 @@ import type { CareerAnalysisResponse, ResumeOptimizationDraft, ResumeUploadMode 
 
 export function CareerDashboard() {
   const [analysis, setAnalysis] = useState<CareerAnalysisResponse>(mockCareerAnalysis)
+  const [resumeId, setResumeId] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [targetRole, setTargetRole] = useState("AI 产品经理")
   const [notes, setNotes] = useState("")
   const [uploadMode, setUploadMode] = useState<ResumeUploadMode>("default")
   const [optimizationDrafts, setOptimizationDrafts] = useState<ResumeOptimizationDraft>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSavingOptimization, setIsSavingOptimization] = useState(false)
   const [backendReady, setBackendReady] = useState<boolean | null>(null)
   const [statusMessage, setStatusMessage] = useState(
     "当前页面会先展示演示报告数据。上传简历后，系统会调用 FastAPI 进行真实解析、岗位匹配与职业规划生成。",
@@ -48,6 +50,7 @@ export function CareerDashboard() {
 
     if (cached) {
       setAnalysis(cached.analysis)
+      setResumeId(cached.resumeId || cached.analysis.resumeId || "")
       setTargetRole(cached.targetRole)
       setNotes(cached.notes)
       setStatusMessage(cached.statusMessage)
@@ -79,13 +82,14 @@ export function CareerDashboard() {
   useEffect(() => {
     saveDashboardSnapshot({
       analysis,
+      resumeId,
       targetRole,
       notes,
       statusMessage,
       uploadMode,
       optimizationDrafts,
     })
-  }, [analysis, notes, optimizationDrafts, statusMessage, targetRole, uploadMode])
+  }, [analysis, notes, optimizationDrafts, resumeId, statusMessage, targetRole, uploadMode])
 
   const reportBadge = useMemo(() => {
     if (backendReady === null) {
@@ -94,6 +98,13 @@ export function CareerDashboard() {
 
     return backendReady ? "后端已连接" : "演示模式"
   }, [backendReady])
+
+  const mergedNotes = useMemo(
+    () => mergeResumeNotes(notes, optimizationFields, optimizationDrafts),
+    [notes, optimizationDrafts, optimizationFields],
+  )
+
+  const canSaveOptimization = Boolean(backendReady && resumeId)
 
   function scrollToElement(id: string) {
     if (typeof document === "undefined") {
@@ -136,9 +147,11 @@ export function CareerDashboard() {
     try {
       const result = await analyzeResume(file, {
         targetRole,
-        notes: mergeResumeNotes(notes, optimizationFields, optimizationDrafts),
+        notes: mergedNotes,
+        resumeId: resumeId || undefined,
       })
       setAnalysis(result)
+      setResumeId(result.resumeId || "")
       setStatusMessage("简历解析与岗位匹配已完成，页面已更新为真实后端数据。")
       setUploadMode("default")
       scrollToElement("resume-review")
@@ -150,8 +163,41 @@ export function CareerDashboard() {
     }
   }
 
+  async function handleSaveOptimization() {
+    if (!backendReady) {
+      setStatusMessage("后端当前不可用，暂时无法把优化内容保存到数据库。")
+      return
+    }
+
+    if (!resumeId) {
+      setStatusMessage("请先上传真实简历并生成一次报告，然后再把优化内容保存到数据库。")
+      return
+    }
+
+    setIsSavingOptimization(true)
+    setStatusMessage("正在保存优化内容到数据库，请稍候。")
+
+    try {
+      await saveResumeOptimization({
+        resumeId,
+        targetRole,
+        notes,
+        optimizationDrafts,
+        mergedNotes,
+      })
+      setStatusMessage("优化内容已保存到数据库。你可以稍后继续编辑，或直接重新生成新报告。")
+      setUploadMode("default")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "保存优化内容失败，请稍后重试。"
+      setStatusMessage(message)
+    } finally {
+      setIsSavingOptimization(false)
+    }
+  }
+
   function handleLoadDemo() {
     setAnalysis(mockCareerAnalysis)
+    setResumeId("")
     setStatusMessage("演示报告已加载，你仍然可以随时上传真实简历重新分析。")
     scrollToElement("resume-review")
   }
@@ -169,6 +215,8 @@ export function CareerDashboard() {
           optimizationFields={optimizationFields}
           optimizationDrafts={optimizationDrafts}
           isSubmitting={isSubmitting}
+          isSavingOptimization={isSavingOptimization}
+          canSaveOptimization={canSaveOptimization}
           statusMessage={statusMessage}
           backendReady={backendReady}
           onFileChange={setFile}
@@ -176,6 +224,7 @@ export function CareerDashboard() {
           onNotesChange={setNotes}
           onUploadModeChange={handleUploadModeChange}
           onOptimizationDraftChange={handleOptimizationDraftChange}
+          onSaveOptimization={handleSaveOptimization}
           onAnalyze={handleAnalyze}
           onLoadDemo={handleLoadDemo}
         />
@@ -216,7 +265,7 @@ export function CareerDashboard() {
       <footer className="border-t border-border/60 bg-card/70">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <p>当前前端已同时支持真实 FastAPI 简历匹配与本地演示回退两种模式。</p>
-          <p>建议后端接口：`POST /api/v1/match/resume-to-jobs` 与 `GET /api/v1/health`。</p>
+          <p>建议后端接口：`POST /api/v1/match/resume-to-jobs`、`POST /api/v1/resumes/:id/optimization`、`GET /api/v1/health`。</p>
         </div>
       </footer>
     </div>

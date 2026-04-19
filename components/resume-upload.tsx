@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 
-import { ArrowLeft, FileText, LoaderCircle, Sparkles, UploadCloud } from "lucide-react"
+import { ArrowLeft, Database, FileText, LoaderCircle, Sparkles, UploadCloud } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,6 +23,8 @@ interface ResumeUploadProps {
   optimizationFields: ResumeOptimizationField[]
   optimizationDrafts: ResumeOptimizationDraft
   isSubmitting: boolean
+  isSavingOptimization: boolean
+  canSaveOptimization: boolean
   statusMessage: string
   backendReady: boolean | null
   onFileChange: (file: File | null) => void
@@ -30,6 +32,7 @@ interface ResumeUploadProps {
   onNotesChange: (value: string) => void
   onUploadModeChange: (mode: ResumeUploadMode) => void
   onOptimizationDraftChange: (key: string, value: string) => void
+  onSaveOptimization: () => void
   onAnalyze: () => void
   onLoadDemo: () => void
 }
@@ -42,6 +45,8 @@ export function ResumeUpload({
   optimizationFields,
   optimizationDrafts,
   isSubmitting,
+  isSavingOptimization,
+  canSaveOptimization,
   statusMessage,
   backendReady,
   onFileChange,
@@ -49,6 +54,7 @@ export function ResumeUpload({
   onNotesChange,
   onUploadModeChange,
   onOptimizationDraftChange,
+  onSaveOptimization,
   onAnalyze,
   onLoadDemo,
 }: ResumeUploadProps) {
@@ -123,7 +129,7 @@ export function ResumeUpload({
                   已填写 {completedOptimizationCount} / {optimizationFields.length} 条优化内容
                 </p>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                  这里填写的内容会在你下次点击“生成报告”时自动并入补充说明，不需要手动复制。
+                  这里填写的内容会在你下次点击“生成报告”时自动并入补充说明，同时也可以单独保存到数据库。
                 </p>
               </div>
 
@@ -135,7 +141,7 @@ export function ResumeUpload({
                       填写建议
                     </p>
                     <p className="mt-3 text-base leading-8 text-muted-foreground">
-                      先把经历写具体，再把动作、结果和业务价值补完整，这样生成的新报告会更贴近目标岗位。
+                      先把经历写具体，再把动作、结果和业务价值补完整，这样生成出来的新报告才会更贴近目标岗位。
                     </p>
                   </div>
 
@@ -158,10 +164,19 @@ export function ResumeUpload({
                   </div>
                   <div className="rounded-2xl bg-background px-5 py-4">
                     <p className="text-sm font-semibold text-primary">03</p>
-                    <p className="mt-2 text-base leading-7 text-foreground">写完后可以直接生成新报告，或先保存返回上传区。</p>
+                    <p className="mt-2 text-base leading-7 text-foreground">写完后可以直接生成新报告，或先保存到数据库。</p>
                   </div>
                 </div>
               </div>
+
+              {!canSaveOptimization ? (
+                <div className="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-5">
+                  <p className="text-sm font-medium text-amber-700">当前还不能保存到数据库</p>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    需要先上传真实简历并成功生成一次报告，系统拿到真实 `resume_id` 后，才能把这部分优化内容写入后端数据库。
+                  </p>
+                </div>
+              ) : null}
 
               <div className="space-y-4">
                 {optimizationFields.map((field) => {
@@ -198,9 +213,15 @@ export function ResumeUpload({
                 })}
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button type="button" className="rounded-full" onClick={() => onUploadModeChange("default")}>
-                  保存并返回上传区
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Button
+                  type="button"
+                  className="rounded-full"
+                  onClick={onSaveOptimization}
+                  disabled={isSavingOptimization || isSubmitting || !canSaveOptimization}
+                >
+                  {isSavingOptimization ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                  <span>{isSavingOptimization ? "保存中" : "保存到数据库并返回上传区"}</span>
                 </Button>
                 <Button type="button" variant="outline" className="rounded-full" onClick={onAnalyze} disabled={isSubmitting}>
                   {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
@@ -222,7 +243,7 @@ export function ResumeUpload({
             <CardHeader>
               <CardTitle className="text-2xl">上传简历并开始分析</CardTitle>
               <CardDescription className="leading-7">
-                支持 PDF、DOC 与 DOCX。页面会优先调用 FastAPI 完成解析与匹配，若后端暂时不可用，则回退到演示数据。
+                支持 PDF、DOC 和 DOCX。页面会优先调用 FastAPI 完成解析与匹配，若后端暂时不可用，则回退到演示数据。
               </CardDescription>
             </CardHeader>
 
@@ -259,7 +280,7 @@ export function ResumeUpload({
                   </div>
                   <p className="text-lg font-medium">选择文件或将其拖放到此处</p>
                   <p className="mt-2 text-sm text-muted-foreground">当前文件：{selectedFileName || "尚未选择任何文件"}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">支持的格式：PDF、DOC、DOCX</p>
+                  <p className="mt-2 text-xs text-muted-foreground">支持格式：PDF、DOC、DOCX</p>
                   <Button
                     type="button"
                     variant="outline"
@@ -303,7 +324,7 @@ export function ResumeUpload({
                 <Textarea
                   value={notes}
                   onChange={(event) => onNotesChange(event.target.value)}
-                  placeholder="添加你偏好的城市、目标行业、薪资期望，或任何有助于分析的背景信息。"
+                  placeholder="添加你偏好的城市、目标行业、薪资预期，或任何有助于分析的背景信息。"
                   className="min-h-28"
                 />
               </div>
@@ -312,7 +333,7 @@ export function ResumeUpload({
                 <div className="rounded-3xl border border-sky-500/20 bg-sky-500/5 p-5">
                   <p className="text-sm font-medium text-sky-700">已补充 {completedOptimizationCount} 条优化内容</p>
                   <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    这些内容会在下次生成报告时自动并入补充说明，无需手动复制。
+                    这些内容会在下次生成报告时自动并入补充说明；如果已经生成过真实报告，也可以进入优化模式后保存到数据库。
                   </p>
                 </div>
               ) : null}
@@ -332,7 +353,7 @@ export function ResumeUpload({
           <Card className="border-border/60 bg-secondary/30">
             <CardHeader>
               <CardTitle className="text-xl">当前运行状态</CardTitle>
-              <CardDescription>当前前端与后端并行联调中时，这里面板能帮助快速定位信息。</CardDescription>
+              <CardDescription>当前前后端联调时，这里会帮助你快速确认请求参数和当前提示。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-3xl border border-border/60 bg-background p-5">
@@ -340,12 +361,12 @@ export function ResumeUpload({
                 <p className="mt-3 leading-7">{statusMessage}</p>
               </div>
               <div className="rounded-3xl border border-border/60 bg-background p-5">
-                <p className="text-sm text-muted-foreground">建议的请求字段</p>
+                <p className="text-sm text-muted-foreground">建议请求字段</p>
                 <div className="mt-3 space-y-2 text-sm leading-7 text-foreground">
                   <p>`file`：简历文件</p>
                   <p>`target_role`：用户目标岗位</p>
-                  <p>`limit`：返回岗位数量</p>
-                  <p>`notes`：补充说明</p>
+                  <p>`resume_id`：已有简历记录的唯一标识，用于更新而不是重复入库</p>
+                  <p>`notes`：补充说明与优化内容</p>
                 </div>
               </div>
             </CardContent>

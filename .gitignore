@@ -15,6 +15,9 @@ node_modules
 .next/
 .DS_Store
 .vercel
+.idea/deployment.xml
 backend/.venv/
 backend/data/
+backend/tests/*.db
+backend/tests/*.db-journal
 backend/**/__pycache__/

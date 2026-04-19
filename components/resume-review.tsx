@@ -67,7 +67,7 @@ export function ResumeReview({
                   当前简历快照
                 </h2>
                 <p className="mt-4 text-base leading-7 text-muted-foreground lg:text-lg">
-                  梳理关键信息，判断简历缺陷，一键修复简历。
+                  梳理关键履历信息，判断简历缺口，并给出可以直接动手修改的方向。
                 </p>
               </div>
 
@@ -110,7 +110,9 @@ export function ResumeReview({
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-medium text-foreground">已识别到的关键信息</p>
-                    <p className="mt-1 text-sm text-muted-foreground">按类型查看系统提取到的技能、工具、经验和语言信息，方便你判断哪些内容已经写清楚。</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      按类型查看系统提取到的技能、工具、经验和语言信息，方便判断哪些内容已经写清楚。
+                    </p>
                   </div>
                   <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                     共 {displayedSkills.length || 0} 项
@@ -144,7 +146,9 @@ export function ResumeReview({
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-medium text-foreground">优先补充顺序</p>
-                    <p className="mt-1 text-sm text-muted-foreground">先处理最影响匹配度的内容，再处理表达优化，修改效率会更高。</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      先处理最影响匹配度的内容，再处理表达优化，修改效率会更高。
+                    </p>
                   </div>
                 </div>
 
@@ -240,7 +244,7 @@ export function ResumeReview({
                 建议补充内容
               </CardTitle>
               <p className="text-sm leading-7 text-muted-foreground">
-                这一栏优先给你可直接动手修改的内容，尽量把每一条都落到简历里的真实材料上，而不是停留在泛泛描述。
+                这一栏优先给你可直接动手修改的内容，尽量把每一条都落到简历里的真实材料上，而不是停留在空泛描述。
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -423,10 +427,10 @@ function buildSuggestions(
 
   const hasSoftGap = capabilityScores.some((item) => item.dimension === "职业素养" && item.gapItems.length > 0)
   if (hasSoftGap) {
-    items.push("补充能体现沟通协作、推进落地、抗压处理问题的案例描述。")
+    items.push("补充能体现沟通协作、推进落地和抗压处理问题的案例描述。")
   }
 
-  items.push(`在简历开头增加清晰的求职方向说明，突出你想申请的“${profile.suggestedDirection || "目标岗位"}”岗位。`)
+  items.push(`在简历开头增加清晰的求职方向说明，突出你想申请的“${profile.suggestedDirection || "目标岗位"}”。`)
 
   return dedupe(items).slice(0, 6)
 }
@@ -439,7 +443,7 @@ function buildSkillGroups(skills: string[]): SkillGroup[] {
   const groups: SkillGroup[] = [
     { label: "技能", items: [], emptyLabel: "建议补充专业能力关键词" },
     { label: "工具", items: [], emptyLabel: "建议补充常用工具与软件" },
-    { label: "业务经验", items: [], emptyLabel: "建议补充业务场景与实践经历" },
+    { label: "业务经验", items: [], emptyLabel: "建议补充业务场景与实践经验" },
     { label: "语言能力", items: [], emptyLabel: "建议补充语言或沟通能力信息" },
   ]
 

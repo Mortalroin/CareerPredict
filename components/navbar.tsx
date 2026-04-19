@@ -7,10 +7,10 @@ interface NavbarProps {
 }
 
 const navItems = [
-  { label: "画像", href: "#profile", icon: Sparkles },
-  { label: "工作机会", href: "#jobs", icon: FileText },
+  { label: "画像概览", href: "#profile", icon: Sparkles },
+  { label: "岗位机会", href: "#jobs", icon: FileText },
   { label: "路线图", href: "#roadmap", icon: Map },
-  { label: "成长", href: "#growth", icon: LineChart },
+  { label: "成长路径", href: "#growth", icon: LineChart },
 ]
 
 export function Navbar({ reportBadge }: NavbarProps) {
@@ -23,7 +23,7 @@ export function Navbar({ reportBadge }: NavbarProps) {
           </div>
           <div>
             <p className="text-base font-semibold">职业预测</p>
-            <p className="text-xs text-muted-foreground">人工智能职业工作空间</p>
+            <p className="text-xs text-muted-foreground">AI 职业规划工作台</p>
           </div>
         </a>
 

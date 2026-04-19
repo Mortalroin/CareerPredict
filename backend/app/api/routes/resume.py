@@ -19,6 +19,7 @@ async def parse_resume(
     target_role: str = Form(default=""),
     city: str = Form(default=""),
     notes: str = Form(default=""),
+    resume_id: str = Form(default=""),
 ) -> ResumeParseResponse:
     if not file.filename:
         raise HTTPException(
@@ -32,6 +33,7 @@ async def parse_resume(
             target_role=target_role,
             city=city,
             notes=notes,
+            resume_id=resume_id,
         )
         resume_store_service.save_resume(result)
         return result

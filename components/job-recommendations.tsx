@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowRight, BriefcaseBusiness, ChevronRight, MapPin, TrendingUp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { saveDashboardScrollPosition, saveJobDetailSnapshot, saveJobRecommendationsSnapshot } from "@/lib/job-detail-storage"
 import type { JobPortraitCard, JobRecommendation } from "@/lib/types"
 
@@ -57,13 +57,13 @@ export function JobRecommendations({
         <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-medium text-primary">目标岗位匹配结果</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight">目标岗位胜任力匹配分析</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">最值得优先投递的岗位推荐</h2>
           </div>
 
           {hasMoreJobs ? (
             <Link href="/jobs" onClick={handleOpenMoreJobs}>
               <Button variant="outline" className="rounded-full">
-                更多推荐岗位
+                查看更多岗位
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </Link>

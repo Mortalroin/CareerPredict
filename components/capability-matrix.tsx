@@ -17,7 +17,7 @@ export function CapabilityMatrix({ items }: CapabilityMatrixProps) {
           <p className="text-sm font-medium text-primary">四维能力分析</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">目标岗位胜任力匹配分析</h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            人岗匹配不只看关键词命中。这里会从基础要求、职业技能、职业素养和发展潜力四个维度拆开评分，方便理解“为什么匹配”和“差距在哪里”。
+            人岗匹配不只看关键词命中。这里会从基础要求、专业技能、职业素养和发展潜力四个维度拆开评分，方便判断为什么匹配、差距又落在哪一项。
           </p>
         </div>
 
