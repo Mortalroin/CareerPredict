@@ -15,6 +15,30 @@ import type {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000"
 
+function getApiBaseUrls(): string[] {
+  const urls = [API_BASE_URL, "http://127.0.0.1:8000", "http://localhost:8000"]
+
+  if (typeof window !== "undefined" && window.location.hostname) {
+    urls.push(`http://${window.location.hostname}:8000`)
+  }
+
+  return Array.from(new Set(urls.map((url) => url.replace(/\/$/, ""))))
+}
+
+async function fetchBackend(path: string, init?: RequestInit): Promise<Response> {
+  let lastError: unknown = null
+
+  for (const baseUrl of getApiBaseUrls()) {
+    try {
+      return await fetch(`${baseUrl}${path}`, init)
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Failed to fetch")
+}
+
 function cleanText(value: string | undefined | null): string {
   if (!value) {
     return ""
@@ -537,13 +561,12 @@ function mapBackendResponse(
       : resume.derived.role_tags.length > 0
         ? dedupeList(resume.derived.role_tags.map(normalizeTagLabel))
         : ["已完成结构化简历解析", "可继续增强岗位与项目表达"]
-  const resumeCertificates = dedupeList(resume.skills.certificates)
+  const certificates = dedupeList([
+    ...resume.skills.certificates,
+    ...response.job_portraits.flatMap((portrait) => portrait.certificates),
+  ])
     .map(normalizeCertificate)
     .slice(0, 8)
-  const recommendedCertificates = dedupeList([
-    ...resumeCertificates,
-    ...response.job_portraits.flatMap((portrait) => portrait.certificates).map(normalizeCertificate),
-  ]).slice(0, 8)
   const projects = mapProjects(response)
   const jobs: JobRecommendation[] = matches.map((match) => ({
     id: match.job_id,
@@ -593,7 +616,7 @@ function mapBackendResponse(
       ],
       skills: uniqueSkills.length > 0 ? uniqueSkills : ["暂未识别到技能关键词"],
       strengths,
-      certificates: resumeCertificates,
+      certificates,
       suggestedDirection: targetRole,
     },
     projects,
@@ -660,7 +683,7 @@ function mapBackendResponse(
         ...response.capability_scores.slice(0, 2).map(mapCapabilityTrend),
       ],
       skills: mapKnowledgeSkills(response),
-      certifications: recommendedCertificates,
+      certifications: certificates,
     },
     report: {
       completionRate: Math.round(response.career_report.completeness_score),
@@ -717,7 +740,7 @@ export async function analyzeResume(
   file: File,
   payload: AnalysisRequestPayload,
 ): Promise<CareerAnalysisResponse> {
-  const matchResponse = await fetch(`${API_BASE_URL}/api/v1/match/resume-to-jobs`, {
+  const matchResponse = await fetchBackend("/api/v1/match/resume-to-jobs", {
     method: "POST",
     body: buildResumeFormData(file, payload, { includeLimit: true }),
   })
@@ -727,19 +750,26 @@ export async function analyzeResume(
 }
 
 export async function checkBackendHealth(): Promise<boolean> {
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), 5000)
+
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/health`, {
+    const response = await fetchBackend("/api/v1/health", {
       method: "GET",
+      cache: "no-store",
+      signal: controller.signal,
     })
 
     return response.ok
   } catch {
     return false
+  } finally {
+    window.clearTimeout(timeoutId)
   }
 }
 
 export async function saveResumeOptimization(payload: ResumeOptimizationSavePayload): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/resumes/${payload.resumeId}/optimization`, {
+  const response = await fetchBackend(`/api/v1/resumes/${payload.resumeId}/optimization`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
