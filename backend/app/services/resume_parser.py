@@ -403,6 +403,8 @@ class ResumeParserService:
         normalized = text.replace("\r\n", "\n").replace("\r", "\n")
         normalized = re.sub(r"\n{3,}", "\n\n", normalized)
         normalized = re.sub(r"[ \t]{2,}", " ", normalized)
+        normalized = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])", "", normalized)
+        normalized = re.sub(r"(?<=\d)\s*([./-])\s*(?=\d)", r"\1", normalized)
         normalized = re.sub(r"(?<=\d)\s+(?=\d)", "", normalized)
         return normalized.strip()
 
@@ -450,12 +452,72 @@ class ResumeParserService:
         return ""
 
     @staticmethod
-    def _extract_education_level(text: str) -> tuple[str, str]:
+    def _extract_labeled_values(
+        text: str,
+        labels: list[str],
+        stop_labels: list[str] | None = None,
+    ) -> list[str]:
+        label_pattern = "|".join(re.escape(label) for label in labels)
+        stop_pattern = "|".join(re.escape(label) for label in (stop_labels or labels))
+        values: list[str] = []
+
+        inline_pattern = re.compile(
+            rf"(?:{label_pattern})\s*(?:[:\uff1a\-]\s*|\s+)([^\n\r,，;；|]+)",
+            re.IGNORECASE,
+        )
+        for match in inline_pattern.finditer(text):
+            value = match.group(1).strip()
+            if stop_pattern:
+                value = re.split(
+                    rf"\s*(?:{stop_pattern})\s*[:\uff1a\-]?",
+                    value,
+                    maxsplit=1,
+                    flags=re.IGNORECASE,
+                )[0]
+            value = value.strip(" \t:-\uff1a")
+            if value:
+                values.append(value)
+
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        line_pattern = re.compile(rf"^(?:{label_pattern})\s*[:\uff1a\-]?\s*$", re.IGNORECASE)
+        for index, line in enumerate(lines[:-1]):
+            if line_pattern.match(line):
+                value = lines[index + 1].strip(" \t:-\uff1a")
+                if value:
+                    values.append(value)
+
+        return list(OrderedDict.fromkeys(values))
+
+    @staticmethod
+    def _match_degree_keyword(text: str) -> tuple[str, str]:
         candidates = [
-            ("phd", ["phd", "doctor", "\u535a\u58eb"]),
-            ("master", ["master", "graduate", "\u7855\u58eb", "\u7814\u7a76\u751f"]),
-            ("bachelor", ["bachelor", "undergraduate", "\u672c\u79d1", "\u5b66\u58eb"]),
-            ("college", ["college", "associate", "\u5927\u4e13", "\u4e13\u79d1"]),
+            ("phd", ["ph.d", "phd", "doctor", "doctorate", "\u535a\u58eb\u7814\u7a76\u751f", "\u535a\u58eb"]),
+            (
+                "master",
+                [
+                    "master",
+                    "graduate",
+                    "mba",
+                    "emba",
+                    "\u7855\u58eb\u7814\u7a76\u751f",
+                    "\u7814\u7a76\u751f",
+                    "\u7855\u58eb",
+                ],
+            ),
+            (
+                "bachelor",
+                [
+                    "bachelor",
+                    "undergraduate",
+                    "\u5927\u5b66\u672c\u79d1",
+                    "\u7edf\u62db\u672c\u79d1",
+                    "\u4e13\u5347\u672c",
+                    "\u672c\u79d1",
+                    "\u5b66\u58eb",
+                ],
+            ),
+            ("college", ["college", "associate", "\u5927\u5b66\u4e13\u79d1", "\u5927\u4e13", "\u4e13\u79d1", "\u9ad8\u804c"]),
+            ("vocational", ["vocational", "\u4e2d\u4e13", "\u4e2d\u6280", "\u804c\u9ad8", "\u6280\u6821"]),
             ("high_school", ["high school", "\u9ad8\u4e2d"]),
         ]
         lower_text = text.lower()
@@ -464,6 +526,33 @@ class ResumeParserService:
                 if keyword in lower_text:
                     return label, keyword
         return "", ""
+
+    @staticmethod
+    def _extract_education_level(text: str) -> tuple[str, str]:
+        labels = [
+            "\u5b66\u5386\u5c42\u6b21",
+            "\u6700\u9ad8\u5b66\u5386",
+            "\u5b66\u5386",
+            "\u6559\u80b2\u7a0b\u5ea6",
+            "\u6559\u80b2\u6c34\u5e73",
+            "\u5b66\u4f4d",
+            "education level",
+            "education",
+            "degree",
+        ]
+        stop_labels = labels + [
+            "\u5de5\u4f5c\u5e74\u9650",
+            "\u5de5\u4f5c\u7ecf\u9a8c",
+            "\u5f53\u524d\u57ce\u5e02",
+            "\u73b0\u5c45\u57ce\u5e02",
+            "\u6240\u5728\u57ce\u5e02",
+        ]
+        for value in ResumeParserService._extract_labeled_values(text, labels, stop_labels):
+            label, keyword = ResumeParserService._match_degree_keyword(value)
+            if label:
+                return label, keyword
+
+        return ResumeParserService._match_degree_keyword(text)
 
     @staticmethod
     def _extract_graduation_school(text: str) -> str:
@@ -479,19 +568,51 @@ class ResumeParserService:
 
     @staticmethod
     def _extract_years_experience(text: str) -> float:
+        labels = [
+            "\u5de5\u4f5c\u5e74\u9650",
+            "\u5de5\u4f5c\u5e74\u8d44",
+            "\u7ecf\u9a8c\u5e74\u9650",
+            "\u76f8\u5173\u7ecf\u9a8c",
+            "\u5de5\u4f5c\u7ecf\u9a8c",
+            "\u5de5\u4f5c\u7ecf\u5386",
+            "\u4ece\u4e1a\u5e74\u9650",
+            "\u5de5\u4f5c\u65f6\u957f",
+            "years experience",
+            "years of experience",
+            "experience",
+        ]
+        stop_labels = labels + [
+            "\u5b66\u5386\u5c42\u6b21",
+            "\u6700\u9ad8\u5b66\u5386",
+            "\u5f53\u524d\u57ce\u5e02",
+            "\u73b0\u5c45\u57ce\u5e02",
+            "\u6240\u5728\u57ce\u5e02",
+        ]
+        values: list[float] = []
+        for value in ResumeParserService._extract_labeled_values(text, labels, stop_labels):
+            parsed = ResumeParserService._parse_years_value(value)
+            if parsed is not None:
+                values.append(parsed)
+
         patterns = [
+            r"(?:\u5de5\u4f5c\u5e74\u9650|\u5de5\u4f5c\u5e74\u8d44|\u7ecf\u9a8c\u5e74\u9650|\u4ece\u4e1a\u5e74\u9650|\u5de5\u4f5c\u7ecf\u9a8c|\u76f8\u5173\u7ecf\u9a8c|experience)\s*[:\uff1a\-]?\s*(\d+(?:\.\d+)?)\+?\s*(?:\u5e74|years|year)?",
             r"(\d+(?:\.\d+)?)\+?\s*(?:years|year)\s+of\s+experience",
             r"experience\s*[:\-]?\s*(\d+(?:\.\d+)?)\+?\s*(?:years|year)",
             r"(\d+(?:\.\d+)?)\s*\u5e74(?:\u7684)?(?:[\u4e2d-\u9fff]{0,12})\u7ecf\u9a8c",
         ]
         lower_text = text.lower()
-        values: list[float] = []
         for pattern in patterns:
             for match in re.findall(pattern, lower_text):
                 try:
                     values.append(float(match))
                 except ValueError:
                     continue
+
+        chinese_years_pattern = r"([一二两三四五六七八九十]{1,3})\s*\u5e74(?:\u4ee5\u4e0a|\u5de6\u53f3|\u7684)?(?:[\u4e2d-\u9fff]{0,12})?(?:\u7ecf\u9a8c|\u7ecf\u5386|\u5e74\u9650)?"
+        for match in re.findall(chinese_years_pattern, text):
+            parsed = ResumeParserService._chinese_number_to_float(match)
+            if parsed is not None:
+                values.append(parsed)
 
         range_pattern = r"(20\d{2})\s*[-/~\u2013\u2014\u81f3]\s*(20\d{2}|present|now|\u81f3\u4eca)"
         matches = re.findall(range_pattern, lower_text)
@@ -505,32 +626,137 @@ class ResumeParserService:
 
         return max(values) if values else 0.0
 
+    @staticmethod
+    def _parse_years_value(value: str) -> float | None:
+        normalized = value.strip().lower()
+        if not normalized:
+            return None
+
+        if re.search(r"\u534a\u5e74", normalized):
+            return 0.5
+
+        if re.search(r"\u5e94\u5c4a|\u5728\u6821|\u65e0\u7ecf\u9a8c|\u6682\u65e0|\u4e0d\u9650", normalized):
+            return 0.0
+
+        numbers = [float(item) for item in re.findall(r"\d+(?:\.\d+)?", normalized)]
+        if numbers:
+            return max(numbers)
+
+        chinese_numbers = re.findall(r"[一二两三四五六七八九十]{1,3}", value)
+        parsed_numbers = [
+            parsed
+            for item in chinese_numbers
+            if (parsed := ResumeParserService._chinese_number_to_float(item)) is not None
+        ]
+        if parsed_numbers:
+            return max(parsed_numbers)
+
+        return None
+
+    @staticmethod
+    def _chinese_number_to_float(value: str) -> float | None:
+        digits = {
+            "\u96f6": 0,
+            "\u4e00": 1,
+            "\u4e8c": 2,
+            "\u4e24": 2,
+            "\u4e09": 3,
+            "\u56db": 4,
+            "\u4e94": 5,
+            "\u516d": 6,
+            "\u4e03": 7,
+            "\u516b": 8,
+            "\u4e5d": 9,
+        }
+        value = value.strip()
+        if not value:
+            return None
+
+        if "\u5341" not in value:
+            total = 0
+            for char in value:
+                if char not in digits:
+                    return None
+                total = total * 10 + digits[char]
+            return float(total)
+
+        left, _, right = value.partition("\u5341")
+        tens = digits.get(left, 1) if left else 1
+        ones = digits.get(right, 0) if right else 0
+        return float(tens * 10 + ones)
+
     def _extract_target_roles(self, text: str, target_role: str) -> list[str]:
         roles: list[str] = []
         if target_role:
             roles.extend(self._split_role_candidates(target_role))
 
         section_pattern = re.compile(
-            r"(?:\u610f\u5411\u804c\u4f4d|求职意向|target role)[:\uff1a]?\s*(.+)",
+            r"^\s*(?:\u610f\u5411\u804c\u4f4d|\u76ee\u6807\u5c97\u4f4d|\u6c42\u804c\u610f\u5411|target role)[:\uff1a]?\s*(.*)",
             re.IGNORECASE,
         )
-        matches = section_pattern.findall(text)
-        for match in matches[:3]:
-            roles.extend(self._split_role_candidates(match))
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        for index, line in enumerate(lines):
+            match = section_pattern.match(line)
+            if not match:
+                continue
+            value = match.group(1).strip()
+            if not value and index + 1 < len(lines):
+                value = lines[index + 1].strip()
+            roles.extend(self._split_role_candidates(value))
+            if len(roles) >= 8:
+                break
 
         return list(OrderedDict.fromkeys([role for role in roles if role]))
 
     @staticmethod
     def _split_role_candidates(text: str) -> list[str]:
-        normalized = text.replace("\n", "/").replace("|", "/").replace(",", "/")
+        normalized = (
+            text.replace("\n", "/")
+            .replace("|", "/")
+            .replace(",", "/")
+            .replace("\uff0c", "/")
+            .replace("\u3001", "/")
+            .replace(";", "/")
+            .replace("\uff1b", "/")
+        )
         parts = re.split(r"[\\/]", normalized)
         return [part.strip() for part in parts if part.strip()]
 
     @staticmethod
     def _extract_current_city(text: str) -> str:
+        labels = [
+            "\u5f53\u524d\u57ce\u5e02",
+            "\u6240\u5728\u57ce\u5e02",
+            "\u5c45\u4f4f\u57ce\u5e02",
+            "\u73b0\u5c45\u57ce\u5e02",
+            "\u73b0\u5c45\u5730",
+            "\u73b0\u5c45",
+            "\u6240\u5728\u5730",
+            "\u5c45\u4f4f\u5730",
+            "\u5e38\u4f4f\u5730",
+            "\u6237\u7c4d",
+            "\u6237\u53e3\u6240\u5728\u5730",
+            "current city",
+            "current location",
+        ]
+        stop_labels = labels + [
+            "\u5b66\u5386\u5c42\u6b21",
+            "\u6700\u9ad8\u5b66\u5386",
+            "\u5de5\u4f5c\u5e74\u9650",
+            "\u5de5\u4f5c\u7ecf\u9a8c",
+            "\u76ee\u6807\u57ce\u5e02",
+            "\u610f\u5411\u57ce\u5e02",
+            "\u671f\u671b\u57ce\u5e02",
+            "\u5de5\u4f5c\u5730\u70b9",
+        ]
+        for value in ResumeParserService._extract_labeled_values(text, labels, stop_labels):
+            city = ResumeParserService._clean_city_value(value)
+            if city:
+                return city
+
         patterns = [
             r"(?:\u6237\u7c4d|户籍)[:\uff1a]?\s*([\u4e00-\u9fff]{2,12})",
-            r"(?:\u73b0\u5c45\u5730|所在地)[:\uff1a]?\s*([\u4e00-\u9fff]{2,12})",
+            r"(?:\u73b0\u5c45\u5730|\u73b0\u5c45\u57ce\u5e02|\u73b0\u5c45|所在地)[:\uff1a]?\s*([\u4e00-\u9fff]{2,12})",
         ]
         for pattern in patterns:
             match = re.search(pattern, text)
@@ -541,12 +767,49 @@ class ResumeParserService:
     @staticmethod
     def _extract_target_city(text: str) -> str:
         patterns = [
-            r"(?:\u610f\u5411\u57ce\u5e02|工作地点|target city)[:\uff1a]?\s*([\u4e00-\u9fff]{2,12})",
+            r"(?:\u610f\u5411\u57ce\u5e02|\u671f\u671b\u57ce\u5e02|工作地点|target city)[:\uff1a]?\s*([\u4e00-\u9fff]{2,12})",
         ]
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 return match.group(1)
+        return ""
+
+    @staticmethod
+    def _clean_city_value(value: str) -> str:
+        stop_words = [
+            "\u5e74\u9f84",
+            "\u6027\u522b",
+            "\u5a5a\u59fb\u72b6\u51b5",
+            "\u6c11\u65cf",
+            "\u5b66\u5386\u5c42\u6b21",
+            "\u6700\u9ad8\u5b66\u5386",
+            "\u5de5\u4f5c\u5e74\u9650",
+            "\u5de5\u4f5c\u7ecf\u9a8c",
+            "\u76ee\u6807\u57ce\u5e02",
+            "\u610f\u5411\u57ce\u5e02",
+            "\u671f\u671b\u57ce\u5e02",
+        ]
+        blocked = {
+            "\u5f53\u524d\u57ce\u5e02",
+            "\u6240\u5728\u57ce\u5e02",
+            "\u5b66\u5386\u5c42\u6b21",
+            "\u5de5\u4f5c\u5e74\u9650",
+            "\u5de5\u4f5c\u7ecf\u9a8c",
+        }
+        cleaned = re.split(r"[,，;；|/]", value.strip(), maxsplit=1)[0]
+        cleaned = re.split("|".join(re.escape(word) for word in stop_words), cleaned, maxsplit=1)[0]
+        cleaned = cleaned.strip(" \t:-\uff1a")
+
+        match = re.search(r"[\u4e00-\u9fff]{2,12}", cleaned)
+        if match:
+            city = match.group(0)
+            return "" if city in blocked else city
+
+        match = re.search(r"[A-Za-z][A-Za-z .'-]{1,40}", cleaned)
+        if match:
+            return match.group(0).strip()
+
         return ""
 
     @staticmethod
@@ -592,6 +855,18 @@ class ResumeParserService:
             "linux",
             "pandas",
             "numpy",
+            "scikit-learn",
+            "pytorch",
+            "xgboost",
+            "lightgbm",
+            "spark",
+            "hive",
+            "tableau",
+            "power bi",
+            "finebi",
+            "figma",
+            "llm",
+            "ai",
             "machine learning",
             "deep learning",
             "rag",
@@ -609,11 +884,35 @@ class ResumeParserService:
             "\u56de\u6b3e",
             "\u6295\u8bc9\u5904\u7406",
             "\u5916\u8d38",
+            "\u6570\u636e\u5206\u6790",
+            "\u5546\u4e1a\u5206\u6790",
+            "\u7ecf\u8425\u5206\u6790",
+            "\u589e\u957f\u5206\u6790",
+            "\u7528\u6237\u589e\u957f",
+            "\u6307\u6807\u4f53\u7cfb",
+            "\u6f0f\u6597\u5206\u6790",
+            "\u7559\u5b58\u5206\u6790",
+            "\u7528\u6237\u5206\u7fa4",
+            "\u7528\u6237\u753b\u50cf",
+            "\u63a8\u8350\u7cfb\u7edf",
+            "\u673a\u5668\u5b66\u4e60",
+            "\u6df1\u5ea6\u5b66\u4e60",
+            "\u6570\u636e\u6316\u6398",
+            "\u81ea\u7136\u8bed\u8a00\u5904\u7406",
+            "\u4ea7\u54c1\u89c4\u5212",
+            "\u9700\u6c42\u5206\u6790",
+            "\u9879\u76ee\u7ba1\u7406",
+            "a/b\u6d4b\u8bd5",
+            "ab\u6d4b\u8bd5",
+            "cohort",
+            "ltv",
+            "roi",
+            "cac",
         ]
         lower_text = text.lower()
         found = [skill for skill in skill_keywords if skill in lower_text]
         unique = list(OrderedDict.fromkeys(found))
-        return unique[:24]
+        return unique[:40]
 
     @staticmethod
     def _extract_work_experience(lines: list[str]) -> list[str]:
